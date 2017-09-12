@@ -53,6 +53,8 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
     for user_sub in db_manager.get_everyone_elses_recent_submssions(submission_data['competition_id'], submission_data['user'], date_created):
         with lock:
             other_submission = get_submission(db_manager, filemanager, user_sub["submission_id"])
+        if other_submission is None:
+            continue
         score = originality_score(submission, other_submission)
 
         if is_not_a_constant and np.std(other_submission) > 0 :
