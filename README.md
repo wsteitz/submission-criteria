@@ -1,7 +1,7 @@
-Machine Learning API
-====================
+Tournament submission criteria checks
+=====================================
 
-We have a sever which scores originality and concordance.
+This server scores originality, concordance, and consistency.
 
 To run the server locally: `./server.py --use_local`
 
@@ -24,6 +24,11 @@ For production, the API sever requires the following environment variables
 -   `PORT`
 -   `API_KEY`
 
+Community
+=========
+
+For questions or discussion about the code, either file an issue or join our [Slack](https://slack.numer.ai/).
+
 Bounty rules
 ============
 
@@ -35,7 +40,7 @@ See [this Medium post](XXX).
 How will I receive my bounty?
 -----------------------------
 
-When you create the pull request, you must specify one or more usernames where the bounty will be sent. We will only send the bounty directly to users. If you would like to hold your NMR somewhere else, you may withdraw it from your account.
+When you create the pull request, you must specify one or more usernames where the bounty will be sent. We will only send the bounty directly to user accounts. If you would like to hold your NMR somewhere else, you may withdraw it from your account.
 
 Who will get the bounty if multiple people complete the same task?
 ------------------------------------------------------------------
@@ -44,17 +49,29 @@ If multiple people independently complete the same task, the first pull request 
 
 For example, suppose Alice and Bob are solving a task with a bounty, and Alice creates a pull request first, then Bob creates one. If Alice's pull request is approved with no changes, then she will receive the bounty. If, however, we request changes to Alice's PR, but Bob's is good to go, then Bob will receive the bounty. If both require changes, then whoever completes those changes first will get the bounty.
 
-I'm totally going to complete this task next week, can I claim it so that nobody finishes before me?
-----------------------------------------------------------------------------------------------------
+I promise I'm going to complete this task next week, can I claim it so that nobody finishes before me?
+------------------------------------------------------------------------------------------------------
 
 We do not allow users to claim tasks; bounties will be paid on a first-come, first-served basis. It may be advisable to let others know if you're working on an issue (for example, by commenting on the issue), but this is not required.
 
 Since we may occasionally remove bounties if the changes are no longer necessary, you may wish to let us know you're working on the issue (publicly or privately). If you are actively working on an issue, we will generally not remove the bounty.
 
+Finally, if you submit a pull request that we intend to approve, but we ask for a few small changes (e.g. formatting), we may explicitly temporarily "hold" the bounty for you, where if you complete the changes promptly, we will not give the bounty to anyone else.
+
 What if I work together with someone to complete a task, and we would like to split the bounty?
 -----------------------------------------------------------------------------------------------
 
 Whoever makes the pull request needs to specify *in the pull request* how they would like the bounty split among users.
+
+My pull request is awesome, but you guys won't approve it!
+----------------------------------------------------------
+
+Pull requests will be approved our Numerai's sole discretion. Bounties will be paid out only for approved pull requests.
+
+I want to work on something, but there's no bounty for it.
+----------------------------------------------------------
+
+That's great, go ahead and work on it! Most potential improvements do not have bounties, but that doesn't mean they shouldn't be completed!
 
 Can I make a pull request for these rules?
 ------------------------------------------
