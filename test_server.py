@@ -1,3 +1,5 @@
+"""Test Server."""
+
 from database_manager import DatabaseManager
 import requests
 import datetime
