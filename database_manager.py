@@ -1,4 +1,5 @@
 # System
+"""MongoDB Data Access Object."""
 import os
 import datetime
 import logging
@@ -41,6 +42,14 @@ class DatabaseManager(object):
         return 314159
 
     def update_leaderboard(self, submission_id, filemanager):
+        """Update the leaderboard with a submission
+
+        Parameters:
+        ----------
+        submission_id : string
+
+        filemanager : FileManager
+        """
         submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
         submission_id = submission["_id"]
         competition_id = submission["competition_id"]
@@ -174,7 +183,16 @@ class DatabaseManager(object):
             )
 
     def write_concordance(self, submission_id, competition_id, concordance):
-        # Write to both the submission and leaderboard
+        """Write to both the submission and leaderboard
+
+        Parameters:
+        -----------
+        submission_id : string
+
+        competition_id : int
+
+        concordance : bool
+        """
         concordance = bool(concordance)
         logging.getLogger().info("Writing out submission_id {} concordance {}".format(submission_id, concordance))
 
@@ -220,8 +238,20 @@ class DatabaseManager(object):
 
 
     def write_originality(self, submission_id, competition_id, is_original):
-        # Write to both the submission and leaderboard
-        # TODO change to reference submission data directly in leaderboard (instead of duplicating data manually)
+        """ Write to both the submission and leaderboard
+
+        Parameters:
+        -----------
+        submission_id : string
+
+        competition_id : int
+
+        is_original : bool
+
+        TODO:
+        -----
+         - change to reference submission data directly in leaderboard (instead of duplicating data manually)
+        """
         logging.getLogger().info("Writing out submission_id {}  originality {}".format(submission_id, is_original))
 
         self.db.submissions.update_one(
@@ -251,7 +281,7 @@ class DatabaseManager(object):
                         }
                     }
                 },
-                
+
                 {
                     "$set": {
                         "leaderboard.$.original": {
@@ -265,13 +295,37 @@ class DatabaseManager(object):
             )
 
     def get_originality(self, submission_id):
+        """Get the originality for a submission_id
+
+        Parameters:
+        -----------
+        submission_id : string
+
+        Returns:
+        bool
+            Whether the submission was deemed original
+        """
         submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
         if "original" in submission:
             return submission["original"]
         return True
 
     def get_everyone_elses_recent_submssions(self, competition_id, username, end_time = None):
-        # Get all the submissions, excluding those by username, up to time end_time.
+        """ Get all the submissions, excluding those by username, up to time end_time.
+
+        Parameters:
+        -----------
+        competition_id : int
+
+        username : string
+
+        endtime : time, optional, default: None
+
+        Returns:
+        --------
+        submissions : list
+            List of all recent submissions for the competition round less than end_time
+        """
 
         if end_time is None:
             end_time = datetime.datetime.utcnow()
@@ -319,6 +373,17 @@ class DatabaseManager(object):
 
 
     def get_filename(self, submission_id):
+        """Get the filename that is used by S3 based on submission_id
+
+        Paramters:
+        ----------
+        submission_id:
+
+        Returns:
+        --------
+        string
+            The filename belonging to the submission id, if not found return None
+        """
         submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
         fname = submission.get("filename", None)
         user = submission.get("username", None)
@@ -328,5 +393,6 @@ class DatabaseManager(object):
             return None
 
     def get_date_created(self, submission_id):
+        """Get the date create for a submission"""
         submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
         return submission["created"]

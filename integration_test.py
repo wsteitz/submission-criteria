@@ -1,3 +1,4 @@
+"""Integration testing."""
 from testing_api import NumerAPI
 import os
 
