@@ -35,7 +35,7 @@ Bounty rules
 What bounties?
 --------------
 
-See [this Medium post](XXX).
+See [this Medium post](https://medium.com/numerai/open-sourcing-model-evaluation-on-numerai-295c1ea3d001).
 
 How will I receive my bounty?
 -----------------------------
