@@ -97,7 +97,7 @@ If you are running locally you will have to start a MongoDB server locally or sp
 
 Once you have installed the requirements and sourced the needed variables (production only) you can run the server.
 
-    $ ./server --use-local
+    $ ./server --use_local
 
 To test that the server is running to can do the following within a python shell:
 
