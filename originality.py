@@ -39,8 +39,17 @@ def original(submission1, submission2, threshold=0.05):
     score = originality_score(submission1, submission2)
     return score > threshold
 
-def originality_score(submission1, submission2):
-    return ks_2samp(submission1, submission2)[0]
+# this function is taken from scipy (ks_2samp) and modified and so falls
+# under their BSD license
+def originality_score(data1, data2):
+    data2 = np.sort(data2)
+    n1 = data1.shape[0]
+    n2 = data2.shape[0]
+    data_all = np.concatenate([data1, data2])
+    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    d = np.max(np.absolute(cdf1 - cdf2))
+    return d
 
 def is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models):
     num_similar_models = 0
@@ -55,6 +64,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
             other_submission = get_submission(db_manager, filemanager, user_sub["submission_id"])
         if other_submission is None:
             continue
+        submission = np.sort(submission)
         score = originality_score(submission, other_submission)
 
         if is_not_a_constant and np.std(other_submission) > 0 :
