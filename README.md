@@ -15,12 +15,6 @@ To see the logic behind scoring originality and concordance, see those python fi
 
 For production, the API sever requires the following environment variables
 
--   `MONGO_URL`
--   `MONGO_DB_NAME`
--   `S3_UPLOAD_BUCKET`
--   `S3_DATASET_BUCKET`
--   `S3_ACCESS_KEY`
--   `S3_SECRET_KEY`
 -   `PORT`
 -   `API_KEY`
 
@@ -31,7 +25,8 @@ Server
 ------
 
 The server is meant to handle requests that look like the following:
-```json
+
+``` json
 {
     "user_id": "zuz",
     "submission_id": "58d411e57278611200ee49a6",
@@ -39,49 +34,35 @@ The server is meant to handle requests that look like the following:
 }
 ```
 
-From there it will ensure that there is an API key for authentication and then queue the requests to the
-leaderboard_queue. That is then processed by another thread that pushes the submission to a concordance_queue and
-a originality queue. Those can then calculate the concordance and originality of the submission and update the submission
-in MongoDB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
-
+From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard\_queue. That is then processed by another thread that pushes the submission to a concordance\_queue and a originality queue. Those can then calculate the concordance and originality of the submission and update the submission in MongoDB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
 
 Concordance
 -----------
 
-There is a separate thread that consumes from the concordance_queue and calculates the concordance for a submission
-request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there
-we pull the submission data from our MongoDB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic.
-Once we have calculated that we update the submission entry in MongoDB with the concordance result.
+There is a separate thread that consumes from the concordance\_queue and calculates the concordance for a submission request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there we pull the submission data from our MongoDB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic. Once we have calculated that we update the submission entry in MongoDB with the concordance result.
 
 Originality
 -----------
 
-There is a separate thread that consumes from the originality_queue and calculates the originality for a submission
-request. For the originality score we have to pull all previous submissions for the current competition round and calculate
-the Two-Sample Kolmogorov-Smirnov score between the submission and all other previous submissions.
+There is a separate thread that consumes from the originality\_queue and calculates the originality for a submission request. For the originality score we have to pull all previous submissions for the current competition round and calculate the Two-Sample Kolmogorov-Smirnov score between the submission and all other previous submissions.
 
-If one of the scores falls under a specific threshold it is deemed to be identical to a previous submission is not considered original.
-Else if it falls under another threshold the submission is considered to be 'similar' and is counted against the submission.
-After we have compared the submission against all previous ones we check the count of how many submissions the current submission
-was similar to. If that is greater than a max limit then the model is considered to not be original.
+If one of the scores falls under a specific threshold it is deemed to be identical to a previous submission is not considered original. Else if it falls under another threshold the submission is considered to be 'similar' and is counted against the submission. After we have compared the submission against all previous ones we check the count of how many submissions the current submission was similar to. If that is greater than a max limit then the model is considered to not be original.
 
 It follows this pseudo-code:
 
-```
-var curr_submission, similar_count = 0, max_similar = 1
+    var curr_submission, similar_count = 0, max_similar = 1
 
-for submission in get_previous_submissions(curr_submission['date_created']):
-    var ks_score = two_sample_ks(curr_submission, sub)
-    if ks_score < equal_threshold:
+    for submission in get_previous_submissions(curr_submission['date_created']):
+        var ks_score = two_sample_ks(curr_submission, sub)
+        if ks_score < equal_threshold:
+            not_original
+        else if ks_score < similar_threshold:
+            similar_count += 1
+
+    if similar_count >= max_similar:
         not_original
-    else if ks_score < similar_threshold:
-        similar_count += 1
-
-if similar_count >= max_similar:
-    not_original
-else:
-    original
-```
+    else:
+        original
 
 Once we have determined if a submission is original or not we then update our submission in MongoDB with the originality result.
 
@@ -92,12 +73,11 @@ First off you will need to install all of the requirements for the server to run
 
 If you do not have `pip` installed to can find the instructions [here](https://pip.pypa.io/en/stable/installing/).
 
-```
-$ pip install -r requirements.txt # you can also use the --requirement flag
-```
+    $ pip install -r requirements.txt # you can also use the --requirement flag
 
-To start a __PRODUCTION__ server it will require the sourcing environment variables and you can do so using a script such as the following:
-```bash
+To start a **PRODUCTION** server it will require the sourcing environment variables and you can do so using a script such as the following:
+
+``` bash
 #!/bin/bash
 export MONGO_URL=<YOUR_MONGO_URL>
 export MONGO_DB_NAME=<YOUR_MONGO_DB_NAME>
@@ -117,20 +97,18 @@ If you are running locally you will have to start a MongoDB server locally or sp
 
 Once you have installed the requirements and sourced the needed variables (production only) you can run the server.
 
-```
-$ ./server --use-local
-```
+    $ ./server --use-local
 
 To test that the server is running to can do the following within a python shell:
 
-```python
+``` python
 >>> import requests
 >>> requests.post("http://localhost:5151/", data={'user': 'zuz', 'submission_id': '58d411e57278611200ee49a6', 'competition_id': 41})
 ```
 
 Or if you prefer cURL:
 
-```bash
+``` bash
 curl -vv -X POST -d '{"user": "zuz", "submission_id": "58d411e57278611200ee49a6", "competition_id": 41}' 'http://localhost:5151/'
 ```
 
