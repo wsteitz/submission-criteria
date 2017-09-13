@@ -1,23 +1,3 @@
-Tournament submission criteria checks
-=====================================
-
-This server scores originality, concordance, and consistency.
-
-To run the server locally: `./server.py --use_local`
-
-Remove `--use_local` for production runs. This will spawn a sever on port 5151 (or set by ENV PORT), and listens for post requests that contain a form with user, `submission_id` and `competition_id`.
-
-For example, the following python code works
-
-`requests.post("http://localhost:5151/", json={'submission_id': '58d411e57278611200ee49a6', 'api_key': 'h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU='})`
-
-To see the logic behind scoring originality and concordance, see those python files.
-
-For production, the API sever requires the following environment variables
-
--   `PORT`
--   `API_KEY`
-
 Overview
 ========
 
