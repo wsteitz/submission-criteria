@@ -59,10 +59,8 @@ def original(submission1, submission2, threshold=0.05):
 
     Paramters:
     ----------
-    submission1 : ndarray
-
-    submission2 : ndarray
-
+    submission1, submission2 : 1-D ndarrays
+        Submission arrays that will be used in the Kolmogorov-Smirnov statistic
     threshold : float, optional, default: 0.05
         threshold in which the originality_score must be greater than to be "original"
 
@@ -79,10 +77,8 @@ def originality_score(submission1, submission2):
 
     Paramters:
     ----------
-    submission1 :
-
-    submission2 :
-
+    submission1, submission2 : 1-D ndarrays
+        Submission arrays that will be used in the Kolmogorov-Smirnov statistic
     Returns:
     --------
     ks_2samp : float

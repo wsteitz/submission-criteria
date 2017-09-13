@@ -47,8 +47,10 @@ class DatabaseManager(object):
         Parameters:
         ----------
         submission_id : string
+            ID of the submission
 
         filemanager : FileManager
+            S3 Bucket data access object for querying competition datasets
         """
         submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
         submission_id = submission["_id"]
@@ -188,10 +190,13 @@ class DatabaseManager(object):
         Parameters:
         -----------
         submission_id : string
+            ID of the submission
 
         competition_id : int
+            The numerical ID of the competition round
 
         concordance : bool
+            The calculated concordance for a submission
         """
         concordance = bool(concordance)
         logging.getLogger().info("Writing out submission_id {} concordance {}".format(submission_id, concordance))
@@ -243,15 +248,15 @@ class DatabaseManager(object):
         Parameters:
         -----------
         submission_id : string
+            The ID of the submission
 
         competition_id : int
+            The numerical ID of the competition round
 
         is_original : bool
-
-        TODO:
-        -----
-         - change to reference submission data directly in leaderboard (instead of duplicating data manually)
+            Originality value for the submission
         """
+        #TODO: change to reference submission data directly in leaderboard (instead of duplicating data manually)
         logging.getLogger().info("Writing out submission_id {}  originality {}".format(submission_id, is_original))
 
         self.db.submissions.update_one(
@@ -300,8 +305,10 @@ class DatabaseManager(object):
         Parameters:
         -----------
         submission_id : string
+            The ID of the submission
 
         Returns:
+        --------
         bool
             Whether the submission was deemed original
         """
@@ -316,10 +323,13 @@ class DatabaseManager(object):
         Parameters:
         -----------
         competition_id : int
+            The numerical ID of the competition round
 
         username : string
+            The username belonging to the submission
 
         endtime : time, optional, default: None
+            Lookback window for querying recent submissions
 
         Returns:
         --------
@@ -378,6 +388,7 @@ class DatabaseManager(object):
         Paramters:
         ----------
         submission_id:
+            The ID of the submission_id
 
         Returns:
         --------
