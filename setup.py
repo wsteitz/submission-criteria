@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "boto3",
         "botocore",
-        "pandas==0.20.2",
+        "pandas==0.20.3",
         "tqdm",
         "pymongo",
         "scipy",
