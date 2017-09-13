@@ -10,6 +10,7 @@ N_RUNS = 5000
 
 
 def gen_submission(size=45000):
+    # numpy's RandomSeed don't play well with multiprocessing; randomstate is a drop-in replacement
     return rnd.normal(loc=0.5, scale=0.1, size=(size,))
 
 
@@ -21,6 +22,7 @@ def check_original(_: int):
     return (t1 - t0) * 1000
 
 
+# try to use half the available cores to avoid shaky medians per run cause by cpu usage from other processes
 pool_size = os.cpu_count() or 1
 if pool_size > 1:
     pool_size = pool_size//2
