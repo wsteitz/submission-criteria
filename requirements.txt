@@ -1,0 +1,15 @@
+# required by server.py
+pqueue
+bottle
+
+# required by s3_util.py
+boto3
+
+# required by database_manager.py
+pymongo
+pandas
+sklearn
+
+# required by originality.py
+scipy
+
