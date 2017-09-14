@@ -1,28 +1,96 @@
-Tournament submission criteria checks
-=====================================
+Overview
+========
 
-This server scores originality, concordance, and consistency.
+Server
+------
 
-To run the server locally: `./server.py --use_local`
+The server is meant to handle requests that look like the following:
 
-Remove `--use_local` for production runs. This will spawn a sever on port 5151 (or set by ENV PORT), and listens for post requests that contain a form with user, `submission_id` and `competition_id`.
+``` json
+{
+    "user_id": "zuz",
+    "submission_id": "58d411e57278611200ee49a6",
+    "api_key": "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU="
+}
+```
 
-For example, the following python code works
+From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard\_queue. That is then processed by another thread that pushes the submission to a concordance\_queue and a originality queue. Those can then calculate the concordance and originality of the submission and update the submission in MongoDB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
 
-`requests.post("http://localhost:5151/", json={'submission_id': '58d411e57278611200ee49a6', 'api_key': 'h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU='})`
+Concordance
+-----------
 
-To see the logic behind scoring originality and concordance, see those python files.
+There is a separate thread that consumes from the concordance\_queue and calculates the concordance for a submission request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there we pull the submission data from our MongoDB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic. Once we have calculated that we update the submission entry in MongoDB with the concordance result.
 
-For production, the API sever requires the following environment variables
+Originality
+-----------
 
--   `MONGO_URL`
--   `MONGO_DB_NAME`
--   `S3_UPLOAD_BUCKET`
--   `S3_DATASET_BUCKET`
--   `S3_ACCESS_KEY`
--   `S3_SECRET_KEY`
--   `PORT`
--   `API_KEY`
+There is a separate thread that consumes from the originality\_queue and calculates the originality for a submission request. For the originality score we have to pull all previous submissions for the current competition round and calculate the Two-Sample Kolmogorov-Smirnov score between the submission and all other previous submissions.
+
+If one of the scores falls under a specific threshold it is deemed to be identical to a previous submission is not considered original. Else if it falls under another threshold the submission is considered to be 'similar' and is counted against the submission. After we have compared the submission against all previous ones we check the count of how many submissions the current submission was similar to. If that is greater than a max limit then the model is considered to not be original.
+
+It follows this pseudo-code:
+
+    var curr_submission, similar_count = 0, max_similar = 1
+
+    for submission in get_previous_submissions(curr_submission['date_created']):
+        var ks_score = two_sample_ks(curr_submission, sub)
+        if ks_score < equal_threshold:
+            not_original
+        else if ks_score < similar_threshold:
+            similar_count += 1
+
+    if similar_count >= max_similar:
+        not_original
+    else:
+        original
+
+Once we have determined if a submission is original or not we then update our submission in MongoDB with the originality result.
+
+Running the server
+==================
+
+First off you will need to install all of the requirements for the server to run. It is recommended that you use `pip` to do so.
+
+If you do not have `pip` installed to can find the instructions [here](https://pip.pypa.io/en/stable/installing/).
+
+    $ pip install -r requirements.txt # you can also use the --requirement flag
+
+To start a **PRODUCTION** server it will require the sourcing environment variables and you can do so using a script such as the following:
+
+``` bash
+#!/bin/bash
+export MONGO_URL=<YOUR_MONGO_URL>
+export MONGO_DB_NAME=<YOUR_MONGO_DB_NAME>
+export S3_UPLOAD_BUCKET=<YOUR_S3_UPLOAD_BUCKET>
+export S3_DATASET_BUCKET=<YOUR_S3_DATASET_BUCKET>
+export S3_ACCESS_KEY=<YOUR_S3_ACCESS_KEY>
+export S3_SECRET_KEY=<YOUR_S3_SECRET_KEY>
+export PORT=<YOUR_PORT>
+export API_KEY=<YOUR_API_KEY>
+```
+
+NOTE: You will need to replace all values in the `<>` with appropriate values.
+
+If you are just running the server locally for development purposes you will not need to source the above variables to you environment.
+
+If you are running locally you will have to start a MongoDB server locally or specify one via the `MONGO_URL` env variable.
+
+Once you have installed the requirements and sourced the needed variables (production only) you can run the server.
+
+    $ ./server --use_local
+
+To test that the server is running to can do the following within a python shell:
+
+``` python
+>>> import requests
+>>> requests.post("http://localhost:5151/", data={'user': 'zuz', 'submission_id': '58d411e57278611200ee49a6', 'competition_id': 41})
+```
+
+Or if you prefer cURL:
+
+``` bash
+curl -vv -X POST -d '{"user": "zuz", "submission_id": "58d411e57278611200ee49a6", "competition_id": 41}' 'http://localhost:5151/'
+```
 
 Community
 =========
