@@ -190,8 +190,15 @@ def get_competition_variables(competition_id, db_manager, filemanager):
     tournament = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
 
     val_ids, test_ids, live_ids = get_ids(filemanager, competition_id)
+    return get_competition_variables_from_df(competition_id, training, tournament, val_ids, test_ids, live_ids)
+
+
+def get_competition_variables_from_df(
+        competition_id: str, training: pd.DataFrame, tournament: pd.DataFrame,
+        val_ids: list, test_ids: list, live_ids: list) -> dict:
 
     f = [c for c in list(tournament) if "feature" in c]
+
     # TODO the dropna is a hack workaround for https://github.com/numerai/api-ml/issues/68
     X = training[f].dropna().as_matrix()
     X = np.append(X, tournament[f].as_matrix(), axis=0)
@@ -206,6 +213,7 @@ def get_competition_variables(competition_id, db_manager, filemanager):
         "cluster_3" : c3,
     }
     return variables
+
 
 def get_submission_pieces(submission_id, competition_id,  db_manager, filemanager):
     """Get validation, test, and live ids sorted from submission_id
