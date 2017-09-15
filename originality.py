@@ -75,24 +75,46 @@ def original(submission1, submission2, threshold=0.05):
 # this function is taken from scipy (ks_2samp) and modified and so falls
 # under their BSD license
 def originality_score(data1, data2):
-    """Calculates the Two Sample Kolmogorov-Smirnov score between two submissions
-
-    Paramters:
-    ----------
-    submission1, submission2 : 1-D ndarrays
-        Submission arrays that will be used in the Kolmogorov-Smirnov statistic
-    Returns:
-    --------
-    ks_2samp : float
-        The Two-Sample Kolmogorov-Smirnov score between submission1 and submission2
     """
+    Computes the Kolmogorov-Smirnov statistic on 2 samples.
+
+    This is a two-sided test for the null hypothesis that 2 independent samples
+    are drawn from the same continuous distribution.
+
+    Warning: data1 is assumed sorted in ascending order.
+
+    Parameters
+    ----------
+    data1, data2 : ndarray
+        Two arrays of sample observations assumed to be drawn from a
+        continuous distribution. Arrays must be of the same size. data1 is
+        assumed sorted in ascending order.
+
+    Returns
+    -------
+    statistic : float
+        KS statistic
+    """
+
+    # data1 is assumed sorted in ascending order
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
-    data_all = np.concatenate([data1, data2])
-    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
-    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    if n1 != n2:
+        raise ValueError("`data1` and `data2` must have the same length")
+
+    # the following commented out line is slower than the two after it
+    # cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf1 = np.searchsorted(data1, data2, side='right')
+    cdf1 = np.concatenate((np.arange(n1) + 1, cdf1)) / (1.0*n1)
+
+    # the following commented out line is slower than the two after it
+    # cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    cdf2 = np.searchsorted(data2, data1, side='right')
+    cdf2 = np.concatenate((cdf2, np.arange(n1) + 1)) / (1.0*n2)
+
     d = np.max(np.absolute(cdf1 - cdf2))
+
     return d
 
 def is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models):
