@@ -15,7 +15,7 @@ from concordance import get_competition_variables_from_df
 from concordance import has_concordance
 from concordance import get_sorted_split
 
-N_SAMPLES = 100_000
+N_SAMPLES = 100 * 1000
 N_RUNS = 250
 
 
