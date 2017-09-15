@@ -16,5 +16,6 @@ setup(
         "bottle",
         "numpy",
         "pqueue",
+        "randomstate",
     ],
 )
