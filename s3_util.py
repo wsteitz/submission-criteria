@@ -1,3 +1,5 @@
+"""S3 Data Access Object."""
+
 import os
 import boto3
 import botocore

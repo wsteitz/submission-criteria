@@ -1,27 +1,19 @@
+"""Machine Learning Server Unit Testing."""
+
 from unittest.mock import MagicMock
 import unittest
 from pqueue import Queue
-
-import server
+import tempfile
+import warnings
 
 
 class TestServerFailover(unittest.TestCase):
-    """
-    TODO(geoff):
-
-    1. It looks like the test isn't closing the file resources, and it is complaining about this.
-       This isn't an issue for production, but is for the tests.
-    2. these shouldn't use the production file directories. They should use a test based one.
-
-    """
-
     fake_requests = [
         "Not a real request",
         "Also not a real request"
     ]
 
     def queue_persistence(self, queue, tdir, qdir):
-
         self.assertEqual(queue.qsize(), 0)
         for request in self.fake_requests:
             queue.put(request)
@@ -35,19 +27,27 @@ class TestServerFailover(unittest.TestCase):
             queue.get()
         self.assertEqual(queue.qsize(), 0)
 
-    def test_queues(self):
+    def test_originality_queue(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self._test_originality_queue()
 
-        queues_and_dirs = {
-            server.originality_queue : [server.TEMP_DIR, server.OQ_DIR],
-            server.concordance_queue : [server.TEMP_DIR, server.CQ_DIR],
-        }
+    def test_concordance_queue(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self._test_concordance_queue()
 
-        for queue, dirs in queues_and_dirs.items():
-            self.queue_persistence(queue, dirs[0], dirs[1])
+    def _test_originality_queue(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as originality_dir:
+                originality_queue = Queue(originality_dir, tempdir=temp_dir)
+                self.queue_persistence(originality_queue, temp_dir, originality_dir)
 
-
-
-
+    def _test_concordance_queue(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with tempfile.TemporaryDirectory() as concordance_dir:
+                concordance_queue = Queue(concordance_dir, tempdir=temp_dir)
+                self.queue_persistence(concordance_queue, temp_dir, concordance_dir)
 
 
 if __name__ == '__main__':

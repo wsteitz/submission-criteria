@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Machine Learning Server."""
 import threading
 from pqueue import Queue
 import sys
@@ -37,6 +37,11 @@ requests.post("http://localhost:5151/", data={'user': 'zuz', 'submission_id': '5
 """
 @route('/', method='POST')
 def queue_for_scoring():
+    """ Recieves a submission and authenticates that the request has a valid API key.
+
+    Once authenticated the submission request is then queued to the leaderboard_queue and later checked for concordance and originality.
+
+    """
     json = request.json
     submission_id = json["submission_id"]
     api_key = json["api_key"]
@@ -58,7 +63,7 @@ def queue_for_scoring():
     leaderboard_queue.put(data)
 
 def put_submission_on_lb(db_manager, filemanager):
-    # Makes sure a new submission is put on the LB, and then fires off concordance and originality checks.
+    """Pulls submissions from leaderboard_queue and pushes submissions to concordance and originality queue for scoring"""
     while True:
         submission = leaderboard_queue.get()
         try:
@@ -72,6 +77,7 @@ def put_submission_on_lb(db_manager, filemanager):
             logging.exception("Exception putting submission on the LB.")
 
 def score_concordance(db_manager, filemanager):
+    """Pulls submission from concordance_queue for concordance check"""
     while True:
         submission = concordance_queue.get()
         try:
@@ -85,6 +91,7 @@ def score_concordance(db_manager, filemanager):
             logging.exception("Exception scoring concordance.")
 
 def score_originality(db_manager, filemanager):
+    """Pulls submission from originality_queue for originality check"""
     while True:
         submission_data = originality_queue.get()
         try:
