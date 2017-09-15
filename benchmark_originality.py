@@ -2,6 +2,7 @@ import time
 import statistics
 import os
 
+import numpy as np
 import randomstate as rnd
 from multiprocessing import Pool
 from originality import original
@@ -17,8 +18,9 @@ def gen_submission(predictions=45000, users=1000):
 def check_original(new_submission, other_submissions):
     t0 = time.time()
     n_predictions = new_submission.shape[0]
+    sorted_submission = np.sort(new_submission.reshape(n_predictions,))
     for i in range(other_submissions.shape[1]):
-        original(new_submission.reshape(n_predictions,), other_submissions[:, i])
+        original(sorted_submission, other_submissions[:, i])
     t1 = time.time()
     return (t1 - t0) * 1000
 
