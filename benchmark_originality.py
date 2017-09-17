@@ -1,4 +1,5 @@
 import time
+import numpy as np
 
 import randomstate as rnd
 
@@ -12,9 +13,9 @@ N_OTHER_SUBMISSIONS = 1000
 
 class OriginalityBenchmark(Benchmark):
     @staticmethod
-    def gen_submission(predictions=N_EXAMPLES, users=N_OTHER_SUBMISSIONS):
+    def gen_submission(predictions=N_EXAMPLES, users=N_OTHER_SUBMISSIONS) -> np.ndarray:
         # numpy's RandomSeed don't play well with multiprocessing; randomstate is a drop-in replacement
-        return rnd.normal(loc=0.5, scale=0.1, size=(predictions, users))
+        return np.array(rnd.normal(loc=0.5, scale=0.1, size=(predictions, users)))
 
     @staticmethod
     def check_original(new_submission, other_submissions):
