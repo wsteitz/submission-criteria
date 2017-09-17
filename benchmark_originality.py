@@ -1,45 +1,63 @@
 import time
-import statistics
-import os
 
 import randomstate as rnd
-from multiprocessing import Pool
+
+from benchmark_base import Benchmark
 from originality import original
 
-N_RUNS = 50
+N_RUNS = 5
+N_EXAMPLES = 45000
+N_OTHER_SUBMISSIONS = 1000
 
 
-def gen_submission(predictions=45000, users=1000):
-    # numpy's RandomSeed don't play well with multiprocessing; randomstate is a drop-in replacement
-    return rnd.normal(loc=0.5, scale=0.1, size=(predictions, users))
+class OriginalityBenchmark(Benchmark):
+    @staticmethod
+    def gen_submission(predictions=N_EXAMPLES, users=N_OTHER_SUBMISSIONS):
+        # numpy's RandomSeed don't play well with multiprocessing; randomstate is a drop-in replacement
+        return rnd.normal(loc=0.5, scale=0.1, size=(predictions, users))
 
+    @staticmethod
+    def check_original(new_submission, other_submissions):
+        n_predictions = new_submission.shape[0]
+        t_iter_start = time.time()
 
-def check_original(new_submission, other_submissions):
-    t0 = time.time()
-    n_predictions = new_submission.shape[0]
-    for i in range(other_submissions.shape[1]):
-        original(new_submission.reshape(n_predictions,), other_submissions[:, i])
-    t1 = time.time()
-    return (t1 - t0) * 1000
+        t_per_submission = list()
+        for i in range(other_submissions.shape[1]):
+            t_sub_start = time.time()
+            original(new_submission.reshape(n_predictions,), other_submissions[:, i])
+            t_per_submission.append((time.time() - t_sub_start) * 1000)
 
+        return (time.time() - t_iter_start), t_per_submission
 
-def run_benchmark():
-    # try to use half the available cores to avoid shaky medians per run caused by cpu usage from other processes
-    pool_size = os.cpu_count() or 1
-    if pool_size > 1:
-        pool_size = pool_size//2
+    def checkpoint(self, times_per_iteration: list, times_per_submission: list=None):
+        if not self.print_checkpoint:
+            return
 
-    new_submission = gen_submission(users=1)
-    other_submissions = gen_submission(users=1000)
+        if len(times_per_iteration) == 1:
+            self.log('[iteration %s/%s] will benchmark after second iteration...' % (1, self.n_runs))
+            return
 
-    with Pool(pool_size) as pool:
-        times = pool.starmap(check_original, [(new_submission, other_submissions) for _ in range(N_RUNS)])
+        self.log_stats(times_per_iteration, unit='s')
 
-    print('ran method %s times' % len(times))
-    print('median: %.2fms' % statistics.median(times))
-    print('mean: %.2fms' % statistics.mean(times))
-    print('stdev: %.2f' % statistics.stdev(times))
+        if len(times_per_iteration) == self.n_runs:
+            self.log('benchmark finished in %.2fs' % sum(times_per_iteration))
+            self.log('[per other submission] %s' % self.format_stats(times_per_submission, unit='ms'))
 
+    def benchmark(self):
+        new_submission = OriginalityBenchmark.gen_submission(users=1)
+        other_submissions = OriginalityBenchmark.gen_submission(users=1000)
+
+        times_per_iteration = list()
+        times_per_submission = list()
+
+        for _ in range(N_RUNS):
+            t_iter, t_subs = OriginalityBenchmark.check_original(new_submission, other_submissions)
+            times_per_iteration.append(t_iter)
+            times_per_submission.extend(t_subs)
+            self.checkpoint(times_per_iteration, times_per_submission)
 
 if __name__ == '__main__':
-    run_benchmark()
+    benchmark = OriginalityBenchmark(n_runs=N_RUNS)
+    benchmark.start('%s runs of %s examples against %s other submissions' % (
+        N_RUNS, N_EXAMPLES, N_OTHER_SUBMISSIONS
+    ))
