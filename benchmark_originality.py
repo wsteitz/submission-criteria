@@ -1,6 +1,7 @@
 import time
 import numpy as np
 
+import numpy as np
 import randomstate as rnd
 
 from benchmark_base import Benchmark
@@ -21,11 +22,12 @@ class OriginalityBenchmark(Benchmark):
     def check_original(new_submission, other_submissions):
         n_predictions = new_submission.shape[0]
         t_iter_start = time.time()
+        sorted_submission = np.sort(new_submission.reshape(n_predictions,))
 
         t_per_submission = list()
         for i in range(other_submissions.shape[1]):
             t_sub_start = time.time()
-            original(new_submission.reshape(n_predictions,), other_submissions[:, i])
+            original(sorted_submission, other_submissions[:, i])
             t_per_submission.append((time.time() - t_sub_start) * 1000)
 
         return (time.time() - t_iter_start), t_per_submission
