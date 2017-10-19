@@ -159,7 +159,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
     num_similar_models = 0
     is_original = True
     similar_models = []
-    is_not_a_constant = np.std(submission) > 0
+    is_not_a_constant = np.std(submission[:, 0]) > 0
 
     date_created = db_manager.get_date_created(submission_data['submission_id'])
 
@@ -170,7 +170,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
             continue
         score = originality_score(submission[:, 1], other_submission[:, 1])
 
-        if is_not_a_constant and np.std(other_submission) > 0 :
+        if is_not_a_constant and np.std(other_submission[:, 0]) > 0 :
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
 
             if np.abs(correlation) > 0.95:
