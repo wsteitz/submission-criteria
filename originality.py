@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 
 lock = Lock()
 
-@functools.lru_cache(maxsize=512)
+@functools.lru_cache(maxsize=2048)
 def get_submission(db_manager, filemanager, submission_id):
     """Gets the submission file from S3
 
