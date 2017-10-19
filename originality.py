@@ -30,7 +30,8 @@ def get_submission(db_manager, filemanager, submission_id):
     Returns:
     --------
     submission : ndarray
-        Array of the submission probabilities sorted by ID
+        2d array of the submission probabilities. First column is sorted by ID
+        and second column is sorted by probability.
     """
     if not submission_id:
         return None
@@ -134,7 +135,9 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
         Submission metadata containing the submission_id and the user associated to the submission
 
     submission : ndarray
-        Submission data that contains the probabilities for the competition data
+        Submission data that contains the probabilities for the competition
+        data. The array is 2d. First column is sorted by ID and second column
+        is sorted by probability.
 
     db_manager : DatabaseManager
         MongoDB data access object that has read and write functions to NoSQL DB
