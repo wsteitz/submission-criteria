@@ -5,7 +5,6 @@ import functools
 from threading import Lock
 
 # Third Party
-from scipy.stats import ks_2samp
 from scipy.stats.stats import pearsonr
 import numpy as np
 import pandas as pd
@@ -50,9 +49,19 @@ def get_submission(db_manager, filemanager, submission_id):
         return None
 
     df = pd.read_csv(local_file)
+
     df.sort_values("id", inplace=True)
     df = df["probability"]
-    return df.as_matrix()
+    a = df.as_matrix()
+    a_sorted = np.sort(a)
+
+    # make a two-column numpy array: first column is sorted by id; second
+    # column is sorted by probability
+    a = a.reshape(-1, 1)
+    a_sorted = a_sorted.reshape(-1, 1)
+    a = np.hstack((a, a_sorted))
+
+    return a
 
 def original(submission1, submission2, threshold=0.05):
     """Determines if two submissions are original
@@ -81,14 +90,14 @@ def originality_score(data1, data2):
     This is a two-sided test for the null hypothesis that 2 independent samples
     are drawn from the same continuous distribution.
 
-    Warning: data1 is assumed sorted in ascending order.
+    Warning: data1 and data2 are assumed sorted in ascending order.
 
     Parameters
     ----------
     data1, data2 : ndarray
         Two arrays of sample observations assumed to be drawn from a
-        continuous distribution. Arrays must be of the same size. data1 is
-        assumed sorted in ascending order.
+        continuous distribution. Arrays must be of the same size. data1 and
+        data2 are assumed sorted in ascending order.
 
     Returns
     -------
@@ -96,8 +105,7 @@ def originality_score(data1, data2):
         KS statistic
     """
 
-    # data1 is assumed sorted in ascending order
-    data2 = np.sort(data2)
+    # data1 and date2 are assumed sorted in ascending order
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     if n1 != n2:
@@ -155,16 +163,15 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
     date_created = db_manager.get_date_created(submission_data['submission_id'])
 
-    sorted_submission = np.sort(submission)
     for user_sub in db_manager.get_everyone_elses_recent_submssions(submission_data['competition_id'], submission_data['user'], date_created):
         with lock:
             other_submission = get_submission(db_manager, filemanager, user_sub["submission_id"])
         if other_submission is None:
             continue
-        score = originality_score(sorted_submission, other_submission)
+        score = originality_score(submission[:, 1], other_submission[:, 1])
 
         if is_not_a_constant and np.std(other_submission) > 0 :
-            correlation = pearsonr(submission, other_submission)[0]
+            correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
 
             if np.abs(correlation) > 0.95:
                 logging.getLogger().info("Found a highly correlated submission {} with score {}".format(user_sub["submission_id"], correlation))
