@@ -49,7 +49,7 @@ def get_submission(db_manager, filemanager, submission_id):
         logging.getLogger().info("Could not get submission {}".format(submission_id))
         return None
 
-    df = pd.read_csv(local_file)
+    df = pd.read_hdf(local_file,'submission_data')
     df.sort_values("id", inplace=True)
     df = df["probability"]
     return df.as_matrix()
