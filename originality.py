@@ -166,32 +166,50 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
     date_created = db_manager.get_date_created(submission_data['submission_id'])
 
-    for user_sub in db_manager.get_everyone_elses_recent_submssions(submission_data['competition_id'], submission_data['user'], date_created):
+    get_others = db_manager.get_everyone_elses_recent_submssions
+
+    # first test correlations
+    for user_sub in get_others(submission_data['competition_id'],
+                               submission_data['user'], date_created):
+
         with lock:
-            other_submission = get_submission(db_manager, filemanager, user_sub["submission_id"])
+            other_submission = get_submission(db_manager, filemanager,
+                                              user_sub["submission_id"])
         if other_submission is None:
             continue
-        score = originality_score(submission[:, 1], other_submission[:, 1])
 
         if is_not_a_constant and np.std(other_submission[:, 0]) > 0 :
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
-
             if np.abs(correlation) > 0.95:
-                logging.getLogger().info("Found a highly correlated submission {} with score {}".format(user_sub["submission_id"], correlation))
+                msg = "Found a highly correlated submission {} with score {}"
+                msg = msg.format(user_sub["submission_id"])
+                logging.getLogger().info(msg, correlation)
                 is_original = False
                 break
 
-        if score < is_exact_dupe_thresh:
-            logging.getLogger().info("Found a duplicate submission {} with score {}".format(user_sub["submission_id"], score))
-            is_original = False
-            break
-        if score <= is_similar_thresh:
-            num_similar_models += 1
-            similar_models.append(user_sub["submission_id"])
-            if num_similar_models >= max_similar_models:
-                logging.getLogger().info("Found too many similar models. Similar models were {}".format(similar_models))
+    # only run KS test if correlation test passes
+    if is_original:
+        for user_sub in get_others(submission_data['competition_id'],
+                                   submission_data['user'], date_created):
+
+            with lock:
+                other_submission = get_submission(db_manager, filemanager,
+                                                  user_sub["submission_id"])
+            if other_submission is None:
+                continue
+
+            score = originality_score(submission[:, 1], other_submission[:, 1])
+            if score < is_exact_dupe_thresh:
+                logging.getLogger().info("Found a duplicate submission {} with score {}".format(user_sub["submission_id"], score))
                 is_original = False
                 break
+            if score <= is_similar_thresh:
+                num_similar_models += 1
+                similar_models.append(user_sub["submission_id"])
+                if num_similar_models >= max_similar_models:
+                    logging.getLogger().info("Found too many similar models. Similar models were {}".format(similar_models))
+                    is_original = False
+                    break
 
     return is_original
 
