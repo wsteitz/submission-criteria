@@ -50,7 +50,6 @@ def get_submission(db_manager, filemanager, submission_id):
         return None
 
     df = pd.read_hdf(local_file,'submission_data')
-    
     df.sort_values("id", inplace=True)
     df = df["probability"]
     a = df.as_matrix()
