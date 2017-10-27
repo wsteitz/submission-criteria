@@ -75,21 +75,14 @@ If you are just running the server locally for development purposes you will not
 
 If you are running locally you will have to start a MongoDB server locally or specify one via the `MONGO_URL` env variable.
 
-Once you have installed the requirements and sourced the needed variables (production only) you can run the server.
+Once you have installed the requirements and sourced the needed variables you can run the server.
 
-    $ ./server --use_local
+    $ ./server
 
-To test that the server is running to can do the following within a python shell:
 
-``` python
->>> import requests
->>> requests.post("http://localhost:5151/", data={'user': 'zuz', 'submission_id': '58d411e57278611200ee49a6', 'competition_id': 41})
-```
-
-Or if you prefer cURL:
-
+Test the server:
 ``` bash
-curl -vv -X POST -d '{"user": "zuz", "submission_id": "58d411e57278611200ee49a6", "competition_id": 41}' 'http://localhost:5151/'
+curl -vv -H "Content-Type: application/json" -X POST -d '{"user": "xanderai", "submission_id": "59efbf570e1ea51200bfc27d", "competition_id": 79, "api_key": "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU="}' 'http://localhost:5151/'
 ```
 
 Community

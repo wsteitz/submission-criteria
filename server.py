@@ -1,21 +1,24 @@
 #!/usr/bin/env python
 """Machine Learning Server."""
+
+# System
 import threading
-from pqueue import Queue
 import sys
 import os
-from datetime import datetime
-
 import argparse
-
-from bottle import run, post, request, response, get, route
-
-from database_manager import DatabaseManager
-from s3_util import FileManager
+from datetime import datetime
 import logging
 
+# Third Party
+from pqueue import Queue
+from bottle import run, request, route
+from s3_util import FileManager
+
+# First Party
+from database_manager import DatabaseManager
 import originality
 import concordance
+import common
 
 PORT = os.environ.get("PORT", "5151")
 API_KEY = os.environ.get("API_KEY", "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU=")
@@ -30,11 +33,6 @@ originality_queue = Queue(OQ_DIR, tempdir=TEMP_DIR)
 concordance_queue = Queue(CQ_DIR, tempdir=TEMP_DIR)
 leaderboard_queue = Queue(LBQ_DIR, tempdir=LB_TEMP_DIR)
 
-"""
-To use this, do something like
-
-requests.post("http://localhost:5151/", data={'user': 'zuz', 'submission_id': '58d411e57278611200ee49a6', 'competition_id': 41})
-"""
 @route('/', method='POST')
 def queue_for_scoring():
     """ Recieves a submission and authenticates that the request has a valid API key.
@@ -42,9 +40,11 @@ def queue_for_scoring():
     Once authenticated the submission request is then queued to the leaderboard_queue and later checked for concordance and originality.
 
     """
+    print(request)
     json = request.json
     submission_id = json["submission_id"]
     api_key = json["api_key"]
+
 
     if API_KEY is None:
         logging.getLogger().critical("NO API KEY EXITING")
@@ -56,11 +56,14 @@ def queue_for_scoring():
     logging.getLogger().info("Received request to score {}".format(submission_id))
 
     data = {
-        'submission_id':submission_id,
-        'enqueue_time':datetime.now(),
+        'submission_id': submission_id,
+        'enqueue_time': datetime.now(),
     }
 
     leaderboard_queue.put(data)
+
+    common.update_loglosses(submission_id, json["competition_id"])
+
 
 def put_submission_on_lb(db_manager, filemanager):
     """Pulls submissions from leaderboard_queue and pushes submissions to concordance and originality queue for scoring"""
@@ -73,8 +76,9 @@ def put_submission_on_lb(db_manager, filemanager):
                 queue.put(submission)
 
             leaderboard_queue.task_done()
-        except Exception as e:
+        except Exception:
             logging.exception("Exception putting submission on the LB.")
+
 
 def score_concordance(db_manager, filemanager):
     """Pulls submission from concordance_queue for concordance check"""
@@ -87,8 +91,9 @@ def score_concordance(db_manager, filemanager):
                 logging.getLogger().info("Submission {} took {} to complete concordance".format(submission['submission_id'], time_taken))
 
             concordance_queue.task_done()
-        except Exception as e:
+        except Exception:
             logging.exception("Exception scoring concordance.")
+
 
 def score_originality(db_manager, filemanager):
     """Pulls submission from originality_queue for originality check"""
@@ -102,8 +107,9 @@ def score_originality(db_manager, filemanager):
 
             originality_queue.task_done()
 
-        except Exception as e:
+        except Exception:
             logging.exception("Exception scoring originality.")
+
 
 def create_logger():
     """Configure the logger to print process ID."""
@@ -116,7 +122,8 @@ def create_logger():
     ch.setFormatter(formatter)
     root.addHandler(ch)
 
-if __name__ == '__main__':
+
+def main():
     """
     The threading in this file works like this
 
@@ -128,16 +135,14 @@ if __name__ == '__main__':
     """
 
     parser = argparse.ArgumentParser(description="Score if submissions are original.")
-    parser.add_argument("--use_local", dest = "local" ,action="store_true", help="Use the local database")
-    parser.add_argument("--num_threads", dest = "num_threads", type=int, default=32, help="Number of threads to use.")
+    parser.add_argument("--num_threads", dest="num_threads", type=int, default=32, help="Number of threads to use.")
     parser.set_defaults(local=False)
     args = parser.parse_args()
 
     create_logger()
-    db_manager = DatabaseManager(local_db = args.local)
+    db_manager = DatabaseManager(local_db=args.local)
     fm = FileManager('/tmp/', logging)
     logging.getLogger().info("Creating servers")
-
 
     threading.Thread(target=run, kwargs=dict(host='0.0.0.0', port=int(PORT))).start()
     logging.getLogger().info("Spawning new threads to score originality and concordance")
@@ -146,3 +151,7 @@ if __name__ == '__main__':
     for _ in range(args.num_threads - 3):
         threading.Thread(target=score_originality, kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
     threading.Thread(target=score_concordance, kwargs=dict(db_manager=db_manager, filemanager=fm)).start()
+
+
+if __name__ == '__main__':
+    main()
