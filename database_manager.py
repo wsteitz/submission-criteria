@@ -34,6 +34,7 @@ class DatabaseManager(object):
 
     def __init__(self):
         self.db = connect_db()
+        self.postgres_db = common.connect_to_postgres()
 
     def __hash__(self):
         """
@@ -102,15 +103,13 @@ class DatabaseManager(object):
         )
 
         # Update consistnecy and insert pending originality and concordance into Postgres
-        postgres_db = common.connect_to_postgres()
-        cursor = postgres_db.cursor()
+        cursor = self.postgres_db.cursor()
         postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
         cursor.execute("UPDATE submissions SET consistency={} WHERE id = '{}'".format(consistency, postgres_submission_id))
         cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
         cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
-        postgres_db.commit()
+        self.postgres_db.commit()
         cursor.close()
-        postgres_db.close()
 
         competition_id = submission["competition_id"]
 
@@ -227,6 +226,12 @@ class DatabaseManager(object):
 
             upsert=False
         )
+        cursor = self.postgres_db.cursor()
+        submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
+        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
+        cursor.execute("UPDATE concordances SET pending=FALSE, value={} WHERE id = '{}'".format(concordance, postgres_submission_id))
+        self.postgres_db.commit()
+        cursor.close()
 
         lb_position = [a for a in self.db.competitions.find({"_id": int(competition_id)}, {"leaderboard": {"$elemMatch": {"submission_id": ObjectId(submission_id)}}})]
 
@@ -284,6 +289,12 @@ class DatabaseManager(object):
 
             upsert=False
         )
+        cursor = self.postgres_db.cursor()
+        submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
+        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
+        cursor.execute("UPDATE originalities SET pending=FALSE, value={} WHERE id = '{}'".format(originality, postgres_submission_id))
+        self.postgres_db.commit()
+        cursor.close()
 
         lb_position = [a for a in self.db.competitions.find({"_id": int(competition_id)}, {"leaderboard": {"$elemMatch": {"submission_id": ObjectId(submission_id)}}})]
 
