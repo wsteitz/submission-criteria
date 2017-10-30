@@ -13,12 +13,13 @@ from sklearn.metrics import log_loss
 import numpy as np
 
 # First Party
-from concordance import get_submission_pieces
+import common
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/numerai-dev")
 MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "numerai-dev")
 
-def connect_db(local_db = True):
+
+def connect_db():
     """Make a connection to either the production or local database. The defintions
     of local and production can be changed with environment variables.
     """
@@ -31,8 +32,8 @@ def connect_db(local_db = True):
 
 class DatabaseManager(object):
 
-    def __init__(self, local_db = True):
-        self.db = connect_db(local_db)
+    def __init__(self):
+        self.db = connect_db()
 
     def __hash__(self):
         """
@@ -99,6 +100,17 @@ class DatabaseManager(object):
                 }
             }
         )
+
+        # Update consistnecy and insert pending originality and concordance into Postgres
+        postgres_db = common.connect_to_postgres()
+        cursor = postgres_db.cursor()
+        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
+        cursor.execute("UPDATE submissions SET consistency={} WHERE id = '{}'".format(consistency, postgres_submission_id))
+        cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
+        cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
+        postgres_db.commit()
+        cursor.close()
+        postgres_db.close()
 
         competition_id = submission["competition_id"]
 
@@ -241,7 +253,6 @@ class DatabaseManager(object):
                 upsert=False
             )
 
-
     def write_originality(self, submission_id, competition_id, is_original):
         """ Write to both the submission and leaderboard
 
@@ -317,7 +328,7 @@ class DatabaseManager(object):
             return submission["original"]
         return True
 
-    def get_everyone_elses_recent_submssions(self, competition_id, username, end_time = None):
+    def get_everyone_elses_recent_submssions(self, competition_id, username, end_time=None):
         """ Get all the submissions, excluding those by username, up to time end_time.
 
         Parameters:
@@ -380,7 +391,6 @@ class DatabaseManager(object):
                 continue
             submissions.append(submission)
         return submissions
-
 
     def get_filename(self, submission_id):
         """Get the filename that is used by S3 based on submission_id

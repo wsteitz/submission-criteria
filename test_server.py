@@ -1,9 +1,14 @@
 """Test Server."""
 
-from database_manager import DatabaseManager
-import requests
+# System
 import datetime
 import os
+
+# Third Party
+import requests
+
+# First Party
+from database_manager import DatabaseManager
 
 
 def fetch_competition(db):
@@ -25,7 +30,7 @@ def test_server(db_manager, comp_id):
 
 
 def main():
-    db_manager = DatabaseManager(local_db = True)
+    db_manager = DatabaseManager()
     cid = str(fetch_competition(db_manager.db)["_id"])
     print(cid)
     test_server(db_manager, cid)

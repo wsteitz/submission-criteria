@@ -67,20 +67,20 @@ def connect_to_public_targets_db():
     return db
 
 
+def postgres_submission_id_for_mongo_submission(cursor, mongo_submission):
+    """Given a mongo submission, return the id of the corresponding submission in Postgres."""
+    query = "SELECT s.id FROM submissions s INNER JOIN users u ON s.user_id = u.id WHERE u.username = '{}' AND s.inserted_at = '{}'".format(mongo_submission["username"], mongo_submission["created"])
+    cursor.execute(query)
+    return cursor.fetchone()[0]
+
+
 def update_loglosses(submission_id, round_number):
+    """Insert validation and test loglosses into the Postgres database."""
     print("Updating loglosses...")
-    # Get the submission
     db = connect_to_database()
     submission_path = download_submission(db, submission_id)
     submission = pd.read_csv(submission_path)
     mongo_submission = db.submissions.find_one({"_id": ObjectId(submission_id)})
-
-    postgres_db = connect_to_postgres()
-    cursor = postgres_db.cursor()
-    cursor.execute("SELECT open_time FROM rounds WHERE number = {}".format(round_number))
-    rounds = cursor.fetchall()
-    round_open_time = rounds[0][0].date()
-    round_data_date = round_open_time - timedelta(days=1)
 
     # Get the truth data
     public_targets_db = connect_to_public_targets_db()
@@ -98,11 +98,10 @@ def update_loglosses(submission_id, round_number):
     validation_logloss = log_loss(validation_data["target"].as_matrix(), submission_validation_data["probability"].as_matrix())
     test_logloss = log_loss(test_data["target"].as_matrix(), submission_test_data["probability"].as_matrix())
 
-    # Get the submission Postgres id
-    query = "SELECT s.id FROM submissions s INNER JOIN users u ON s.user_id = u.id WHERE u.username = '{}' AND s.inserted_at = '{}'".format(mongo_submission["username"], mongo_submission["created"])
-    cursor.execute(query)
-    submission_id = cursor.fetchone()[0]
-
+    # Insert values into Postgres
+    postgres_db = connect_to_postgres()
+    cursor = postgres_db.cursor()
+    submission_id = postgres_submission_id_for_mongo_submission(cursor, mongo_submission)
     query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, submission_id)
     cursor.execute(query)
     print("Updated {} with validation_logloss={} and test_logloss={}".format(submission_id, validation_logloss, test_logloss))

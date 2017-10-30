@@ -139,7 +139,7 @@ def main():
     args = parser.parse_args()
 
     create_logger()
-    db_manager = DatabaseManager(local_db=args.local)
+    db_manager = DatabaseManager()
     fm = FileManager('/tmp/', logging)
     logging.getLogger().info("Creating servers")
 
