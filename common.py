@@ -4,6 +4,7 @@ Commonly used functions.
 
 # System
 import os
+from datetime import timedelta
 
 # Third Party
 import pandas as pd
@@ -72,31 +73,39 @@ def update_loglosses(submission_id, round_number):
     db = connect_to_database()
     submission_path = download_submission(db, submission_id)
     submission = pd.read_csv(submission_path)
+    mongo_submission = db.submissions.find_one({"_id": ObjectId(submission_id)})
 
     postgres_db = connect_to_postgres()
     cursor = postgres_db.cursor()
     cursor.execute("SELECT open_time FROM rounds WHERE number = {}".format(round_number))
     rounds = cursor.fetchall()
-    round_open_time = rounds[0]
-    print(round_open_time)
+    round_open_time = rounds[0][0].date()
+    round_data_date = round_open_time - timedelta(days=1)
 
     # Get the truth data
     public_targets_db = connect_to_public_targets_db()
-    validation_data = pd.read_sql("SELECT id, target FROM tournament_daily_encrypted WHERE date = '{}' AND data_type = 'validation';".format(), public_targets_db)
+    query = "SELECT id, target FROM tournament_historical_encrypted WHERE data_type = 'validation';"
+    validation_data = pd.read_sql(query, public_targets_db)
     validation_data.sort_values("id", inplace=True)
-    test_data = pd.read_sql("SELECT id, target FROM tournament_daily_encrypted WHERE date = '{}' AND data_type = 'test';".format(), public_targets_db)
+    test_data = pd.read_sql("SELECT id, target FROM tournament_historical_encrypted WHERE data_type = 'test';", public_targets_db)
     test_data.sort_values("id", inplace=True)
 
     # Calculate logloss
-    submission_validation_data = submission.loc[submission["id"].isin(validation_data["id"].as_matrix())]
+    submission_validation_data = submission.loc[submission["id"].isin(validation_data["id"].as_matrix())].copy()
     submission_validation_data.sort_values("id", inplace=True)
-    submission_test_data = submission.loc[submission["id"].isin(test_data["id"].as_matrix())]
+    submission_test_data = submission.loc[submission["id"].isin(test_data["id"].as_matrix())].copy()
     submission_test_data.sort_values("id", inplace=True)
     validation_logloss = log_loss(validation_data["target"].as_matrix(), submission_validation_data["probability"].as_matrix())
     test_logloss = log_loss(test_data["target"].as_matrix(), submission_test_data["probability"].as_matrix())
 
-    # TODO: Get the postgres submission id
-    cursor.execute("UPDATE submissions SET validation_logloss={} AND test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, ))
+    # Get the submission Postgres id
+    query = "SELECT s.id FROM submissions s INNER JOIN users u ON s.user_id = u.id WHERE u.username = '{}' AND s.inserted_at = '{}'".format(mongo_submission["username"], mongo_submission["created"])
+    cursor.execute(query)
+    submission_id = cursor.fetchone()[0]
+
+    query = "UPDATE submissions SET validation_logloss={}, test_logloss={} WHERE id = '{}'".format(validation_logloss, test_logloss, submission_id)
+    cursor.execute(query)
+    print("Updated {} with validation_logloss={} and test_logloss={}".format(submission_id, validation_logloss, test_logloss))
     postgres_db.commit()
     cursor.close()
     postgres_db.close()

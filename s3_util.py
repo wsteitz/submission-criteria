@@ -1,9 +1,12 @@
 """S3 Data Access Object."""
 
+# System
 import os
+import zipfile
+
+# Third Party
 import boto3
 import botocore
-import zipfile
 
 
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET")

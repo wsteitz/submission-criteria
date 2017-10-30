@@ -40,7 +40,6 @@ def queue_for_scoring():
     Once authenticated the submission request is then queued to the leaderboard_queue and later checked for concordance and originality.
 
     """
-    print(request)
     json = request.json
     submission_id = json["submission_id"]
     api_key = json["api_key"]
