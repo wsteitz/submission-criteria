@@ -9,7 +9,9 @@ from sklearn.cluster import MiniBatchKMeans
 from scipy.stats import ks_2samp
 import numpy as np
 import pandas as pd
-from bson.objectid import ObjectId
+
+# First Party
+import common
 
 def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
     """Checks that the clustered submission data conforms to a concordance threshold
@@ -45,13 +47,13 @@ def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
     ks = []
     for i in set(c1):
 
-        ks_score = max(ks_2samp(P1.reshape(-1)[c1==i], P2.reshape(-1)[c2==i])[0],
-                       ks_2samp(P1.reshape(-1)[c1==i], P3.reshape(-1)[c3==i])[0],
-                       ks_2samp(P3.reshape(-1)[c3==i], P2.reshape(-1)[c2==i])[0])
+        ks_score = max(ks_2samp(P1.reshape(-1)[c1 == i], P2.reshape(-1)[c2 == i])[0],
+                       ks_2samp(P1.reshape(-1)[c1 == i], P3.reshape(-1)[c3 == i])[0],
+                       ks_2samp(P3.reshape(-1)[c3 == i], P2.reshape(-1)[c2 == i])[0])
 
         ks.append(ks_score)
     logging.getLogger().info("Noticed score {}".format(np.mean(ks)))
-    return np.mean(ks)<threshold
+    return np.mean(ks) < threshold
 
 def make_clusters(X, X_1, X_2, X_3):
     """Split submission data into 3 clusters using K-Means clustering
@@ -88,28 +90,28 @@ def make_clusters(X, X_1, X_2, X_3):
     return c1, c2, c3
 
 @functools.lru_cache(maxsize=2)
-def get_ids(filemanager, competition_id):
-    """Gets the ids from submission data based on the competition_id
+def get_ids(filemanager, round_number):
+    """Gets the ids from submission data based on the round_number
 
     Parameters:
     -----------
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
-    competition_id : int
+    round_number : int
         The numerical id of the competition
 
     Returns:
     --------
     val : list
-        List of all ids in the 'validation' dataset for the competition_id round
+        List of all ids in the 'validation' dataset
 
     test : list
-        List of all ids in the 'test' dataset for the competition_id round
+        List of all ids in the 'test' dataset
 
     live : list
-        List of all ids in the 'live' dataset for the competition_id round
+        List of all ids in the 'live' dataset
     """
-    extract_dir = filemanager.download_dataset(competition_id)
+    extract_dir = filemanager.download_dataset(round_number)
     tournament = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
     val = tournament[tournament["data_type"] == "validation"]
     test = tournament[tournament["data_type"] == "test"]
@@ -165,13 +167,13 @@ def get_sorted_split(data, val_ids, test_ids, live_ids):
     return validation.as_matrix(), test.as_matrix(), live.as_matrix()
 
 @functools.lru_cache(maxsize=2)
-def get_competition_variables(competition_id, db_manager, filemanager):
+def get_competition_variables(round_number, db_manager, filemanager):
     """Return the K-Means Clustered tournament data for the competition round
 
     Parameters:
     -----------
-    competition_id : int
-        Numerical ID of the competition round of the tournament
+    round_id : string
+        UUID of the competition round of the tournament
 
     db_manager : DatabaseManager
         MongoDB data access object that has read and write functions to NoSQL DB
@@ -182,19 +184,18 @@ def get_competition_variables(competition_id, db_manager, filemanager):
     Returns:
     --------
     variables : dictionary
-        Holds clustered tournament data and the competition_id
+        Holds clustered tournament data and the round_number
     """
-    extract_dir = filemanager.download_dataset(competition_id)
+    extract_dir = filemanager.download_dataset(round_number)
 
     training = pd.read_csv(os.path.join(extract_dir, "numerai_training_data.csv"))
     tournament = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
 
-    val_ids, test_ids, live_ids = get_ids(filemanager, competition_id)
-    return get_competition_variables_from_df(competition_id, training, tournament, val_ids, test_ids, live_ids)
-
+    val_ids, test_ids, live_ids = get_ids(filemanager, round_number)
+    return get_competition_variables_from_df(round_number, training, tournament, val_ids, test_ids, live_ids)
 
 def get_competition_variables_from_df(
-        competition_id: str, training: pd.DataFrame, tournament: pd.DataFrame,
+        round_number: str, training: pd.DataFrame, tournament: pd.DataFrame,
         val_ids: list, test_ids: list, live_ids: list) -> dict:
 
     f = [c for c in list(tournament) if "feature" in c]
@@ -207,15 +208,14 @@ def get_competition_variables_from_df(
     c1, c2, c3 = make_clusters(X, X_1, X_2, X_3)
 
     variables = {
-        "competition_id":competition_id,
-        "cluster_1" : c1,
-        "cluster_2" : c2,
-        "cluster_3" : c3,
+        "round_number": round_number,
+        "cluster_1": c1,
+        "cluster_2": c2,
+        "cluster_3": c3,
     }
     return variables
 
-
-def get_submission_pieces(submission_id, competition_id,  db_manager, filemanager):
+def get_submission_pieces(submission_id, round_number,  db_manager, filemanager):
     """Get validation, test, and live ids sorted from submission_id
 
     Parameters:
@@ -223,7 +223,7 @@ def get_submission_pieces(submission_id, competition_id,  db_manager, filemanage
     submission_id : string
         ID of the submission
 
-    competition_id : int
+    round_number : int
         Numerical ID of the competition round of the tournament
 
     db_manager : DatabaseManager
@@ -243,10 +243,10 @@ def get_submission_pieces(submission_id, competition_id,  db_manager, filemanage
     live : ndarray
         Sorted live ids from submission data
     """
-    s3_file = db_manager.get_filename(submission_id)
+    s3_file, _ = common.get_filename(db_manager.postgres_db, submission_id)
     local_file = filemanager.download([s3_file])[0]
     data = pd.read_csv(local_file)
-    val_ids, test_ids, live_ids = get_ids(filemanager, competition_id)
+    val_ids, test_ids, live_ids = get_ids(filemanager, round_number)
     validation, tests, live = get_sorted_split(data, val_ids, test_ids, live_ids)
     return validation, tests, live
 
@@ -264,21 +264,18 @@ def submission_concordance(submission, db_manager, filemanager):
     filemanager : FileManager
             S3 Bucket data access object for querying competition datasets
     """
-    s = db_manager.db.submissions.find_one({'_id':ObjectId(submission["submission_id"])})
-    submission['user'] = s['username']
-    submission['competition_id'] = s['competition_id']
-
-    clusters = get_competition_variables(submission['competition_id'], db_manager, filemanager)
-    P1, P2, P3 = get_submission_pieces(submission['submission_id'], submission['competition_id'], db_manager, filemanager)
+    round_number = db_manager.get_round_number(submission["submission_id"])
+    clusters = get_competition_variables(round_number, db_manager, filemanager)
+    P1, P2, P3 = get_submission_pieces(submission["submission_id"], round_number, db_manager, filemanager)
     c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
 
     try:
         concordance = has_concordance(P1, P2,P3, c1, c2, c3)
     except IndexError:
         # If we had an indexing error, that is because the round restart, and we need to try getting the new competition variables.
-         get_competition_variables.cache_clear()
-         clusters = get_competition_variables(submission['competition_id'], db_manager, filemanager)
-         c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
-         concordance = has_concordance(P1, P2,P3, c1, c2, c3)
+        get_competition_variables.cache_clear()
+        clusters = get_competition_variables(round_number, db_manager, filemanager)
+        c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
+        concordance = has_concordance(P1, P2,P3, c1, c2, c3)
 
-    db_manager.write_concordance(submission['submission_id'], submission['competition_id'], concordance)
+    db_manager.write_concordance(submission['submission_id'], concordance)

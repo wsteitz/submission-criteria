@@ -55,13 +55,13 @@ def queue_for_scoring():
     logging.getLogger().info("Received request to score {}".format(submission_id))
 
     data = {
-        'submission_id': submission_id,
-        'enqueue_time': datetime.now(),
+        "submission_id": submission_id,
+        "enqueue_time": datetime.now(),
     }
 
     leaderboard_queue.put(data)
 
-    common.update_loglosses(submission_id, json["competition_id"])
+    common.update_loglosses(submission_id)
 
 
 def put_submission_on_lb(db_manager, filemanager):
@@ -76,7 +76,7 @@ def put_submission_on_lb(db_manager, filemanager):
 
             leaderboard_queue.task_done()
         except Exception:
-            logging.exception("Exception putting submission on the LB.")
+            logging.exception("Exception updating submission.")
 
 
 def score_concordance(db_manager, filemanager):

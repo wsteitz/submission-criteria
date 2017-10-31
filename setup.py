@@ -8,7 +8,6 @@ setup(
         "botocore",
         "pandas==0.20.3",
         "tqdm",
-        "pymongo",
         "scipy",
         "sklearn",
         "statsmodels",

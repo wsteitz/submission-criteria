@@ -6,7 +6,6 @@ bottle == 0.12.13
 boto3 == 1.4.7
 
 # required by database_manager.py
-pymongo == 3.5.1
 pandas == 0.20.3
 sklearn == 0.0
 

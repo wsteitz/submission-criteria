@@ -3,6 +3,7 @@
 # System
 import os
 import zipfile
+import logging
 
 # Third Party
 import boto3
@@ -17,7 +18,7 @@ S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
 
 class FileManager(object):
 
-    def __init__(self, local_dir, logging = None):
+    def __init__(self, local_dir, logging=None):
         self.local_dir = local_dir
         self.s3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
         self.bucket = S3_BUCKET
@@ -42,6 +43,7 @@ class FileManager(object):
 
         local_files = []
         for s3_file in files:
+            print(s3_file)
             full_filename = os.path.join(self.local_dir, s3_file)
             local_files.append(full_filename)
 
@@ -62,15 +64,15 @@ class FileManager(object):
 
         return local_files
 
-    def download_dataset(self, competition_id):
+    def download_dataset(self, round_number):
         bucket = S3_DATASET_BUCKET
-        s3_path = "{}/numerai_datasets.zip".format(competition_id)
-        extract_dir = "{}/numerai_datasets/".format(competition_id)
+        s3_path = "{}/numerai_datasets.zip".format(round_number)
+        extract_dir = "{}/numerai_datasets/".format(round_number)
         local_path = os.path.join(self.local_dir, s3_path)
         local_extract = os.path.join(self.local_dir, extract_dir)
 
-        if not os.path.exists(os.path.join(self.local_dir, str(competition_id))):
-            os.makedirs(os.path.join(self.local_dir, str(competition_id)))
+        if not os.path.exists(os.path.join(self.local_dir, str(round_number))):
+            os.makedirs(os.path.join(self.local_dir, str(round_number)))
 
         if not os.path.isfile(local_path):
             print("Attempting to get file {} from bucket {} to {}".format(s3_path, bucket, local_path))

@@ -166,7 +166,7 @@ class NumerAPI(object):
                 return resp.status_code
 
         r = requests.post(self._submissions_url,
-                          data={'competition_id':comp_id, 'dataset_id':dataset_id, 'filename':filename},
+                          data={"dataset_id": dataset_id, "filename": filename},
                           headers=headers)
 
         return r.status_code

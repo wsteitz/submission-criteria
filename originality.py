@@ -8,7 +8,9 @@ from threading import Lock
 from scipy.stats.stats import pearsonr
 import numpy as np
 import pandas as pd
-from bson.objectid import ObjectId
+
+# First Party
+import common
 
 lock = Lock()
 
@@ -36,7 +38,7 @@ def get_submission(db_manager, filemanager, submission_id):
     if not submission_id:
         return None
 
-    s3_filename = db_manager.get_filename(submission_id)
+    s3_filename, _ = common.get_filename(db_manager.postgres_db, submission_id)
     try:
 
         local_files = filemanager.download([s3_filename])
@@ -46,7 +48,7 @@ def get_submission(db_manager, filemanager, submission_id):
 
         local_file = local_files[0]
     except Exception as e:
-        logging.getLogger().info("Could not get submission {}".format(submission_id))
+        logging.getLogger().info("Could not get submission {} at S3 path {}".format(submission_id, s3_filename))
         return None
 
     df = pd.read_csv(local_file)
@@ -178,7 +180,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
         if other_submission is None:
             continue
 
-        if is_not_a_constant and np.std(other_submission[:, 0]) > 0 :
+        if is_not_a_constant and np.std(other_submission[:, 0]) > 0:
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
             if np.abs(correlation) > 0.95:
                 msg = "Found a highly correlated submission {} with score {}"
@@ -233,16 +235,20 @@ def submission_originality(submission_data, db_manager, filemanager):
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
     """
-    s = db_manager.db.submissions.find_one({'_id':ObjectId(submission_data['submission_id'])})
-    submission_data['user'] = s['username']
-    submission_data['competition_id'] = s['competition_id']
-    logging.getLogger().info("Scoring {} {}".format(submission_data['user'], submission_data['submission_id']))
+    query = "SELECT round_id, user_id FROM submissions WHERE id='{}'".format(submission_data["submission_id"])
+    cursor = db_manager.postgres_db.cursor()
+    cursor.execute(query)
+    results = cursor.fetchone()
+    cursor.close()
+    submission_data["round_id"] = results[0]
+    submission_data["user_id"] = results[1]
+    logging.getLogger().info("Scoring user_id {} submission_id {}".format(submission_data["user_id"], submission_data['submission_id']))
 
     with lock:
         submission = get_submission(db_manager, filemanager, submission_data['submission_id'])
 
     if submission is None:
-        logging.getLogger().info("Couldn't find {} {}".format(submission_data['user'], submission_data['submission_id']))
+        logging.getLogger().info("Couldn't find submission {}".format(submission_data['submission_id']))
         return
 
     is_exact_dupe_thresh = 0.005
@@ -250,4 +256,4 @@ def submission_originality(submission_data, db_manager, filemanager):
     max_similar_models = 1
 
     is_original = is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models)
-    db_manager.write_originality(submission_data['submission_id'], submission_data['competition_id'], is_original)
+    db_manager.write_originality(submission_data['submission_id'], is_original)

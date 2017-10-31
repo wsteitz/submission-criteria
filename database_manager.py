@@ -1,16 +1,16 @@
 # System
-"""MongoDB Data Access Object."""
+"""Data access class"""
 import os
 import datetime
 import logging
 import math
 
 # Third Party
-import pymongo as pymongo
-from bson.objectid import ObjectId
 import pandas as pd
 from sklearn.metrics import log_loss
 import numpy as np
+import psycopg2
+import psycopg2.extras
 
 # First Party
 import common
@@ -19,21 +19,8 @@ MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/numerai-dev")
 MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "numerai-dev")
 
 
-def connect_db():
-    """Make a connection to either the production or local database. The defintions
-    of local and production can be changed with environment variables.
-    """
-
-    url = MONGO_URL
-    db_name = MONGO_DB_NAME
-
-    client = pymongo.MongoClient(url)
-    return client[db_name]
-
 class DatabaseManager(object):
-
     def __init__(self):
-        self.db = connect_db()
         self.postgres_db = common.connect_to_postgres()
 
     def __hash__(self):
@@ -42,6 +29,15 @@ class DatabaseManager(object):
         but we don't actually care about hashing it.
         """
         return 314159
+
+    def get_round_number(self, submission_id):
+        query = "SELECT round_id FROM submissions WHERE id = '{}'".format(submission_id)
+        cursor = self.postgres_db.cursor()
+        cursor.execute(query)
+        round_id = cursor.fetchone()[0]
+        cursor.execute("SELECT number FROM rounds WHERE id = '{}'".format(round_id))
+        result = cursor.fetchone()[0]
+        return result
 
     def update_leaderboard(self, submission_id, filemanager):
         """Update the leaderboard with a submission
@@ -54,15 +50,13 @@ class DatabaseManager(object):
         filemanager : FileManager
             S3 Bucket data access object for querying competition datasets
         """
-        submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
-        submission_id = submission["_id"]
-        competition_id = submission["competition_id"]
+        round_number = self.get_round_number(submission_id)
 
         # Get the tournament data
-        extract_dir = filemanager.download_dataset(competition_id)
+        extract_dir = filemanager.download_dataset(round_number)
         tournament_data = pd.read_csv(os.path.join(extract_dir, "numerai_tournament_data.csv"))
         # Get the user submission
-        s3_file = self.get_filename(submission_id)
+        s3_file, _ = common.get_filename(self.postgres_db, submission_id)
         local_file = filemanager.download([s3_file])[0]
         submission_data = pd.read_csv(local_file)
         validation_data = tournament_data[tournament_data.data_type == "validation"]
@@ -86,116 +80,15 @@ class DatabaseManager(object):
 
         print("Consistency: {}".format(consistency))
 
-        self.db.submissions.update_one(
-            {"_id": submission_id},
-
-            {
-                "$set": {
-                    "consistency": consistency,
-                    "concordant": {
-                        "pending": True
-                    },
-                    "original": {
-                        "pending": True
-                    }
-                }
-            }
-        )
-
-        # Update consistnecy and insert pending originality and concordance into Postgres
+        # Update consistency and insert pending originality and concordance into Postgres
         cursor = self.postgres_db.cursor()
-        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
-        cursor.execute("UPDATE submissions SET consistency={} WHERE id = '{}'".format(consistency, postgres_submission_id))
-        cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
-        cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}')".format(postgres_submission_id))
+        cursor.execute("UPDATE submissions SET consistency={} WHERE id = '{}'".format(consistency, submission_id))
+        cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}')".format(submission_id))
+        cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}')".format(submission_id))
         self.postgres_db.commit()
         cursor.close()
 
-        competition_id = submission["competition_id"]
-
-        # TODO remove list comprehension, change to find_one, and change checks/loops
-        lb_position = [a for a in self.db.competitions.find({"_id": int(competition_id)}, {"leaderboard": {"$elemMatch": {"username": submission["username"]}}})]
-
-        is_in_leaderboard = False
-        for lb in lb_position:
-            try:
-                lb["leaderboard"]
-                is_in_leaderboard = True
-            except:
-                pass
-
-        if is_in_leaderboard:
-
-            self.db.competitions.update_one(
-                {
-                    "_id": int(competition_id),
-                    "leaderboard": {
-                        "$elemMatch": {
-                            "username": submission["username"]
-                        }
-                    }
-                },
-
-                {
-                    "$set": {
-                        "leaderboard.$.submission_id": ObjectId(submission_id),
-                        "leaderboard.$.logloss.validation": submission["validationLogloss"],
-                        "leaderboard.$.logloss.consistency": consistency,
-                        "leaderboard.$.concordant": {
-                            "pending": True
-                        },
-
-                        "leaderboard.$.original": {
-                            "pending": True
-                        }
-                    }
-                },
-
-                upsert=False
-            )
-
-        else:
-            user = self.db.users.find_one({"username":submission["username"]})
-            self.db.competitions.update(
-                {"_id": int(competition_id)},
-
-                {
-                    "$push": {
-                        "leaderboard": {
-                            "username": submission["username"],
-
-                            "submission_id": ObjectId(submission_id),
-
-                            "earnings": {
-                                "career": {
-                                    "usd": user["earnings"]["career"]["usd"],
-                                    "nmr": user["earnings"]["career"]["nmr"]
-                                },
-
-                                "competition": {
-                                    "usd": 0,
-                                    "nmr": 0
-                                }
-                            },
-
-                            "logloss": {
-                                "validation": submission["validationLogloss"],
-                                "consistency": consistency
-                            },
-
-                            "concordant": {
-                                "pending": True
-                            },
-
-                            "original": {
-                                "pending": True
-                            }
-                        }
-                    }
-                }
-            )
-
-    def write_concordance(self, submission_id, competition_id, concordance):
+    def write_concordance(self, submission_id, concordance):
         """Write to both the submission and leaderboard
 
         Parameters:
@@ -203,62 +96,16 @@ class DatabaseManager(object):
         submission_id : string
             ID of the submission
 
-        competition_id : int
-            The numerical ID of the competition round
-
         concordance : bool
             The calculated concordance for a submission
         """
-        concordance = bool(concordance)
-        logging.getLogger().info("Writing out submission_id {} concordance {}".format(submission_id, concordance))
-
-        self.db.submissions.update_one(
-            {"_id": ObjectId(submission_id)},
-
-            {
-                "$set": {
-                    "concordant": {
-                        "pending": False,
-                        "value": concordance
-                    }
-                }
-            },
-
-            upsert=False
-        )
         cursor = self.postgres_db.cursor()
-        submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
-        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
-        cursor.execute("UPDATE concordances SET pending=FALSE, value={} WHERE id = '{}'".format(concordance, postgres_submission_id))
+        query = "UPDATE concordances SET pending=FALSE, value={} WHERE submission_id = '{}'".format(concordance, submission_id)
+        cursor.execute(query)
         self.postgres_db.commit()
         cursor.close()
 
-        lb_position = [a for a in self.db.competitions.find({"_id": int(competition_id)}, {"leaderboard": {"$elemMatch": {"submission_id": ObjectId(submission_id)}}})]
-
-        if len(lb_position)>0:
-            self.db.competitions.update_one(
-                {
-                    "_id": int(competition_id),
-                    "leaderboard": {
-                        "$elemMatch": {
-                            "submission_id": ObjectId(submission_id)
-                        }
-                    }
-                },
-
-                {
-                    "$set": {
-                        "leaderboard.$.concordant": {
-                            "pending": False,
-                            "value": concordance
-                        }
-                    }
-                },
-
-                upsert=False
-            )
-
-    def write_originality(self, submission_id, competition_id, is_original):
+    def write_originality(self, submission_id, is_original):
         """ Write to both the submission and leaderboard
 
         Parameters:
@@ -266,88 +113,25 @@ class DatabaseManager(object):
         submission_id : string
             The ID of the submission
 
-        competition_id : int
-            The numerical ID of the competition round
-
         is_original : bool
             Originality value for the submission
         """
-        #TODO: change to reference submission data directly in leaderboard (instead of duplicating data manually)
-        logging.getLogger().info("Writing out submission_id {}  originality {}".format(submission_id, is_original))
-
-        self.db.submissions.update_one(
-            {"_id": ObjectId(submission_id)},
-
-            {
-                "$set": {
-                    "original": {
-                        "pending": False,
-                        "value": is_original
-                    }
-                }
-            },
-
-            upsert=False
-        )
         cursor = self.postgres_db.cursor()
-        submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
-        postgres_submission_id = common.postgres_submission_id_for_mongo_submission(cursor, submission)
-        cursor.execute("UPDATE originalities SET pending=FALSE, value={} WHERE id = '{}'".format(originality, postgres_submission_id))
+        logging.getLogger().info("Writing out submission_id {} originality {}".format(submission_id, is_original))
+        query = "UPDATE originalities SET pending=FALSE, value={} WHERE submission_id = '{}'".format(is_original, submission_id)
+        cursor.execute(query)
         self.postgres_db.commit()
         cursor.close()
 
-        lb_position = [a for a in self.db.competitions.find({"_id": int(competition_id)}, {"leaderboard": {"$elemMatch": {"submission_id": ObjectId(submission_id)}}})]
-
-        if len(lb_position)>0:
-            self.db.competitions.update_one(
-                {
-                    "_id": int(competition_id),
-                    "leaderboard": {
-                        "$elemMatch": {
-                            "submission_id": ObjectId(submission_id)
-                        }
-                    }
-                },
-
-                {
-                    "$set": {
-                        "leaderboard.$.original": {
-                            "pending": False,
-                            "value": is_original
-                        }
-                    }
-                },
-
-                upsert=False
-            )
-
-    def get_originality(self, submission_id):
-        """Get the originality for a submission_id
+    def get_everyone_elses_recent_submssions(self, round_id, user_id, end_time=None):
+        """ Get all submissions in a round, excluding those submitted by the given user_id.
 
         Parameters:
         -----------
-        submission_id : string
-            The ID of the submission
+        round_id : int
+            The ID of the competition round
 
-        Returns:
-        --------
-        bool
-            Whether the submission was deemed original
-        """
-        submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
-        if "original" in submission:
-            return submission["original"]
-        return True
-
-    def get_everyone_elses_recent_submssions(self, competition_id, username, end_time=None):
-        """ Get all the submissions, excluding those by username, up to time end_time.
-
-        Parameters:
-        -----------
-        competition_id : int
-            The numerical ID of the competition round
-
-        username : string
+        user_id : string
             The username belonging to the submission
 
         endtime : time, optional, default: None
@@ -358,73 +142,20 @@ class DatabaseManager(object):
         submissions : list
             List of all recent submissions for the competition round less than end_time
         """
-
         if end_time is None:
             end_time = datetime.datetime.utcnow()
-
-        pipeline = [{
-            "$match": {
-                "competition_id": int(competition_id),
-                "created": {
-                    "$lt": end_time
-                }
-            }
-        },
-
-        {
-            "$sort": {
-                "created": -1
-            }
-        },
-
-        {
-            "$group": {
-                "_id": "$username",
-                "username": {
-                    "$first": "$username"
-                },
-                "filename": {
-                    "$first": "$filename"
-                },
-                "submission_id": {
-                    "$first": "$_id"
-                },
-                "created": {
-                    "$first": "$created"
-                }
-            }
-        }]
-
-        submissions = []
-
-        for submission in self.db.submissions.aggregate(pipeline):
-            if submission["username"] == username:
-                continue
-            submissions.append(submission)
-        return submissions
-
-    def get_filename(self, submission_id):
-        """Get the filename that is used by S3 based on submission_id
-
-        Paramters:
-        ----------
-        submission_id:
-            The ID of the submission_id
-
-        Returns:
-        --------
-        string
-            The filename belonging to the submission id, if not found return None
-        """
-        submission = self.db.submissions.find_one({"_id": ObjectId(submission_id)})
-        fname = submission.get("filename", None)
-        user = submission.get("username", None)
-        if fname and user:
-            return "{}/{}".format(user, fname)
-        else:
-            return None
+        cursor = self.postgres_db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        query = "SELECT id FROM submissions WHERE round_id = '{}' AND user_id != '{}' AND inserted_at < '{}' ORDER BY inserted_at DESC".format(round_id, user_id, end_time)
+        cursor.execute(query)
+        results = cursor.fetchall()
+        cursor.close()
+        return results
 
     def get_date_created(self, submission_id):
         """Get the date create for a submission"""
-        submission = self.db.submissions.find_one({"_id":ObjectId(submission_id)})
-        return submission["created"]
+        cursor = self.postgres_db.cursor()
+        query = "SELECT inserted_at FROM submissions WHERE id = '{}'".format(submission_id)
+        cursor.execute(query)
+        result = cursor.fetchone()[0]
+        cursor.close()
+        return result
