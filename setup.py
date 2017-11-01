@@ -17,6 +17,7 @@ setup(
         "pqueue",
         "randomstate",
         "psycopg2",
-        "sqlalchemy"
+        "sqlalchemy",
+        "mysqlclient"
     ],
 )
