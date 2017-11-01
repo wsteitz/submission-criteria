@@ -16,5 +16,6 @@ setup(
         "numpy",
         "pqueue",
         "randomstate",
+        "psycopg2"
     ],
 )
