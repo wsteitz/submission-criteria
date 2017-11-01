@@ -1,1 +1,1 @@
-web: bin/proximo ./server.py
+web: ./server.py

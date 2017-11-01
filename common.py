@@ -45,6 +45,7 @@ def download_submission(postgres_db, submission_id):
             return None
     return path
 
+
 def connect_to_postgres():
     """Connect to postgres database."""
     print("Using {} Postgres database credentials".format(os.environ.get("POSTGRES_CREDS")))
