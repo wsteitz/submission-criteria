@@ -21,7 +21,7 @@ def get_submission(db_manager, filemanager, submission_id):
     Parameters:
     -----------
     db_manager: DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to NoSQL DB
 
     filemanager: FileManager
         S3 Bucket data access object for querying competition datasets
@@ -142,7 +142,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
         is sorted by probability.
 
     db_manager : DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to NoSQL DB
 
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
@@ -217,7 +217,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
 
 def submission_originality(submission_data, db_manager, filemanager):
-    """Pulls submission data from MongoDB and determines the originality score and will update the submissions originality score
+    """Pulls submission data from DB and determines the originality score and will update the submissions originality score
 
     This checks a few things
         1. If the current submission is similar to the previous submission, we give it the same originality score
@@ -230,7 +230,7 @@ def submission_originality(submission_data, db_manager, filemanager):
         Metadata about the submission pulled from the queue
 
     db_manager : DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to DB
 
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets

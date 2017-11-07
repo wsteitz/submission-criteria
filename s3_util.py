@@ -11,7 +11,7 @@ import botocore
 
 
 S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET")
-S3_DATASET_BUCKET = os.environ.get("S3_DATASET_BUCKET")
+S3_DATASET_BUCKET = "numerai-datasets"
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
 

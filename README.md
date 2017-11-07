@@ -14,12 +14,12 @@ The server is meant to handle requests that look like the following:
 }
 ```
 
-From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard\_queue. That is then processed by another thread that pushes the submission to a concordance\_queue and a originality queue. Those can then calculate the concordance and originality of the submission and update the submission in MongoDB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
+From there it will ensure that there is an API key for authentication and then queue the requests to the leaderboard\_queue. That is then processed by another thread that pushes the submission to a concordance\_queue and a originality queue. Those can then calculate the concordance and originality of the submission and update the submission in DB. This pipeline is to ensure that the submission requests are processed in a timely fashion.
 
 Concordance
 -----------
 
-There is a separate thread that consumes from the concordance\_queue and calculates the concordance for a submission request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there we pull the submission data from our MongoDB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic. Once we have calculated that we update the submission entry in MongoDB with the concordance result.
+There is a separate thread that consumes from the concordance\_queue and calculates the concordance for a submission request. We pull the competition data from a designated S3 bucket and calculate the K-Means clustering. From there we pull the submission data from our DB and calculate the concordance using Two-Sample Kolmogorov-Smirnov statistic. Once we have calculated that we update the submission entry in DB with the concordance result.
 
 Originality
 -----------
@@ -44,7 +44,7 @@ It follows this pseudo-code:
     else:
         original
 
-Once we have determined if a submission is original or not we then update our submission in MongoDB with the originality result.
+Once we have determined if a submission is original or not we then update our submission in DB with the originality result.
 
 Running the server
 ==================
@@ -59,10 +59,6 @@ To start a **PRODUCTION** server it will require the sourcing environment variab
 
 ``` bash
 #!/bin/bash
-export MONGO_URL=<YOUR_MONGO_URL>
-export MONGO_DB_NAME=<YOUR_MONGO_DB_NAME>
-export S3_UPLOAD_BUCKET=<YOUR_S3_UPLOAD_BUCKET>
-export S3_DATASET_BUCKET=<YOUR_S3_DATASET_BUCKET>
 export S3_ACCESS_KEY=<YOUR_S3_ACCESS_KEY>
 export S3_SECRET_KEY=<YOUR_S3_SECRET_KEY>
 export PORT=<YOUR_PORT>
@@ -72,8 +68,6 @@ export API_KEY=<YOUR_API_KEY>
 NOTE: You will need to replace all values in the `<>` with appropriate values.
 
 If you are just running the server locally for development purposes you will not need to source the above variables to you environment.
-
-If you are running locally you will have to start a MongoDB server locally or specify one via the `MONGO_URL` env variable.
 
 Once you have installed the requirements and sourced the needed variables you can run the server.
 

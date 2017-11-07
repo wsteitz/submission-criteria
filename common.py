@@ -13,6 +13,19 @@ import botocore
 from sqlalchemy import create_engine
 from sklearn.metrics import log_loss
 
+S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
+s3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+
+
+def get_secret(key):
+    """Return a secret from S3."""
+    global s3
+    bucket = "numerai-api-ml-secrets"
+    obj = s3.Object(bucket, key)
+    return obj.get()['Body'].read().decode('utf-8')
+
 
 def get_filename(postgres_db, submission_id):
     query = "SELECT filename, user_id FROM submissions WHERE id = '{}'".format(submission_id)
@@ -29,10 +42,7 @@ def get_filename(postgres_db, submission_id):
 
 
 def download_submission(postgres_db, submission_id):
-    S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
-    S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
-    S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
-    s3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
+    global s3
     bucket = S3_BUCKET
 
     s3_file, filename = get_filename(postgres_db, submission_id)
@@ -49,12 +59,17 @@ def download_submission(postgres_db, submission_id):
 def connect_to_postgres():
     """Connect to postgres database."""
     print("Using {} Postgres database credentials".format(os.environ.get("POSTGRES_CREDS")))
-    return connect(os.environ.get("POSTGRES"))
+    postgres_url = os.environ.get("POSTGRES")
+    if not postgres_url:
+        postgres_url = get_secret("POSTGRES")
+    return connect(postgres_url)
 
 
 def connect_to_public_targets_db():
     """Connect to the public targets database."""
     url = os.environ.get("SQL_URL")
+    if not url:
+        url = get_secret("SQL_URL")
     if url is None or url == "":
         raise Exception("You must specify SQL_URL")
     db = create_engine(url, echo=False)

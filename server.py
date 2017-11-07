@@ -22,6 +22,8 @@ import common
 
 PORT = os.environ.get("PORT", "5151")
 API_KEY = os.environ.get("API_KEY", "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU=")
+if not API_KEY:
+    API_KEY = common.get_secret("API_KEY")
 TEMP_DIR, OQ_DIR, CQ_DIR = "queue_temp", "oqueue", "cqueue"
 LB_TEMP_DIR, LBQ_DIR = "lb_temp", "lbqueue"
 

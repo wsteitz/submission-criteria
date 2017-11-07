@@ -176,7 +176,7 @@ def get_competition_variables(round_number, db_manager, filemanager):
         UUID of the competition round of the tournament
 
     db_manager : DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to NoSQL DB
 
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
@@ -227,7 +227,7 @@ def get_submission_pieces(submission_id, round_number,  db_manager, filemanager)
         Numerical ID of the competition round of the tournament
 
     db_manager : DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to NoSQL DB
 
     filemanager : FileManager
         S3 Bucket data access object for querying competition datasets
@@ -251,7 +251,7 @@ def get_submission_pieces(submission_id, round_number,  db_manager, filemanager)
     return validation, tests, live
 
 def submission_concordance(submission, db_manager, filemanager):
-    """Determine if a submission is concordant and write the result to MongoDB
+    """Determine if a submission is concordant and write the result to DB
 
     Parameters:
     -----------
@@ -259,7 +259,7 @@ def submission_concordance(submission, db_manager, filemanager):
         Submission data that holds the ids of submission and competition round
 
     db_manager : DatabaseManager
-        MongoDB data access object that has read and write functions to NoSQL DB
+        DB data access object that has read and write functions to NoSQL DB
 
     filemanager : FileManager
             S3 Bucket data access object for querying competition datasets

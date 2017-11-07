@@ -15,9 +15,6 @@ import psycopg2.extras
 # First Party
 import common
 
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017/numerai-dev")
-MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "numerai-dev")
-
 
 class DatabaseManager(object):
     def __init__(self):
