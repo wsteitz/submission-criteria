@@ -79,6 +79,11 @@ Test the server:
 curl -vv -H "Content-Type: application/json" -X POST -d '{"submission_id": "7496e75d-8be1-445f-8883-9f565d9a7244", "api_key": "h/52y/E7cm8Ih4F3cVdlBM4ZQxER+Apk6P0L7yR0lFU="}' 'http://localhost:5151/'
 ```
 
+Deployment
+==========
+- Create a new environment: `./deploy/gen-dockerrun.sh prod && ./deploy/new-environment.sh api-ml-production api-ml-production`
+- Deploy changes: `./deploy/push.sh prod api-ml-production`
+
 Community
 =========
 

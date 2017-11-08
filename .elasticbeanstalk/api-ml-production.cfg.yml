@@ -1,0 +1,34 @@
+AWSConfigurationTemplateVersion: 1.1.0.0
+EnvironmentConfigurationMetadata:
+  DateModified: '1510104971991'
+EnvironmentTier:
+  Name: WebServer
+  Type: Standard
+OptionSettings:
+  AWSEBSecurityGroup.aws:ec2:vpc:
+    VPCId: vpc-1ebbd078
+  aws:autoscaling:launchconfiguration:
+    IamInstanceProfile: aws-elasticbeanstalk-ec2-role
+    InstanceType: r4.2xlarge
+    SecurityGroups: sg-0902d974
+  aws:ec2:vpc:
+    AssociatePublicIpAddress: false
+    ELBSubnets: subnet-dff52c97
+    Subnets: subnet-3bf22b73
+    VPCId: vpc-1ebbd078
+  aws:elasticbeanstalk:cloudwatch:logs:
+    StreamLogs: false
+  aws:elasticbeanstalk:environment:
+    EnvironmentType: LoadBalanced
+    ServiceRole: aws-elasticbeanstalk-service-role
+  aws:elasticbeanstalk:healthreporting:system:
+    SystemType: enhanced
+  aws:elasticbeanstalk:sns:topics:
+    Notification Endpoint: admin@numer.ai
+  aws:elb:loadbalancer:
+    LoadBalancerHTTPPort: 'OFF'
+    LoadBalancerHTTPSPort: '443'
+    SSLCertificateId: arn:aws:acm:us-west-2:074996771758:certificate/0e1a5738-5250-4e49-bae2-29837548e5bc
+Platform:
+  PlatformArn: arn:aws:elasticbeanstalk:us-west-2::platform/Docker running on 64bit
+    Amazon Linux/2.7.4
