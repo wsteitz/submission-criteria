@@ -25,7 +25,6 @@ def get_secret(key):
     bucket = "numerai-api-ml-secrets"
     obj = s3.Object(bucket, key)
     secret = obj.get()['Body'].read().decode('utf-8')
-    print(secret)
     return secret
 
 

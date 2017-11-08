@@ -53,7 +53,7 @@ def queue_for_scoring():
         logging.getLogger().critical("NO API KEY EXITING")
         return
     if api_key != API_KEY:
-        logging.getLogger().info("Received invalid post request with api_key {} and submission_id {}".format(api_key, submission_id))
+        logging.getLogger().info("Received invalid post request with incorrect api_key {} and submission_id {}".format(api_key, submission_id))
         return
 
     logging.getLogger().info("Received request to score {}".format(submission_id))
