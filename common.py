@@ -24,7 +24,9 @@ def get_secret(key):
     global s3
     bucket = "numerai-api-ml-secrets"
     obj = s3.Object(bucket, key)
-    return obj.get()['Body'].read().decode('utf-8')
+    secret = obj.get()['Body'].read().decode('utf-8')
+    print(secret)
+    return secret
 
 
 def get_filename(postgres_db, submission_id):
@@ -58,7 +60,10 @@ def download_submission(postgres_db, submission_id):
 
 def connect_to_postgres():
     """Connect to postgres database."""
-    print("Using {} Postgres database credentials".format(os.environ.get("POSTGRES_CREDS")))
+    postgres_creds = os.environ.get("POSTGRES_CREDS")
+    if not postgres_creds:
+        postgres_creds = get_secret("POSTGRES_CREDS")
+    print("Using {} Postgres database credentials".format(postgres_creds))
     postgres_url = os.environ.get("POSTGRES")
     if not postgres_url:
         postgres_url = get_secret("POSTGRES")
