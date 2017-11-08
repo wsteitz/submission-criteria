@@ -8,7 +8,7 @@ OptionSettings:
   AWSEBSecurityGroup.aws:ec2:vpc:
     VPCId: vpc-1ebbd078
   aws:autoscaling:launchconfiguration:
-    IamInstanceProfile: aws-elasticbeanstalk-ec2-role
+    IamInstanceProfile: api-ml-production-role
     InstanceType: r4.2xlarge
     SecurityGroups: sg-0902d974
   aws:ec2:vpc:
