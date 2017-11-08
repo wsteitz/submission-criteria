@@ -10,7 +10,7 @@ import boto3
 import botocore
 
 
-S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET")
+S3_BUCKET = os.environ.get("S3_UPLOAD_BUCKET", "numerai-production-uploads")
 S3_DATASET_BUCKET = "numerai-datasets"
 S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
@@ -52,7 +52,7 @@ class FileManager(object):
                 os.makedirs(nested_dir_name)
 
             if not os.path.isfile(full_filename):
-                print("Downloading {}".format(full_filename))
+                print("Downloading {} from S3 bucket {}".format(full_filename, self.bucket))
                 try:
                     self.s3.meta.client.download_file(self.bucket, s3_file, full_filename)
                 except botocore.exceptions.EndpointConnectionError:
