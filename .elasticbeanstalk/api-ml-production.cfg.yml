@@ -26,9 +26,8 @@ OptionSettings:
   aws:elasticbeanstalk:sns:topics:
     Notification Endpoint: admin@numer.ai
   aws:elb:loadbalancer:
-    LoadBalancerHTTPPort: 'OFF'
-    LoadBalancerHTTPSPort: '443'
-    SSLCertificateId: arn:aws:acm:us-west-2:074996771758:certificate/0e1a5738-5250-4e49-bae2-29837548e5bc
+    LoadBalancerHTTPPort: '80'
+    LoadBalancerHTTPSPort: 'OFF'
 Platform:
   PlatformArn: arn:aws:elasticbeanstalk:us-west-2::platform/Docker running on 64bit
     Amazon Linux/2.7.4
