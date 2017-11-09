@@ -102,16 +102,17 @@ def score_originality(db_manager, filemanager):
     """Pulls submission from originality_queue for originality check"""
     while True:
         submission_data = originality_queue.get()
+        submission_id = submission_data["submission_id"]
         try:
             originality.submission_originality(submission_data, db_manager, filemanager)
             if 'enqueue_time' in submission_data:
                 time_taken = datetime.now() - submission_data['enqueue_time']
-                logging.getLogger().info("Submission {} took {} to complete originality".format(submission_data['submission_id'], time_taken))
+                logging.getLogger().info("Submission {} took {} to complete originality".format(submission_id, time_taken))
 
             originality_queue.task_done()
 
         except Exception:
-            logging.exception("Exception scoring originality.")
+            logging.exception("Exception scoring originality for submission id {}.".format(submission_id))
 
 
 def create_logger():
