@@ -80,8 +80,8 @@ class DatabaseManager(object):
         # Update consistency and insert pending originality and concordance into Postgres
         cursor = self.postgres_db.cursor()
         cursor.execute("UPDATE submissions SET consistency={} WHERE id = '{}'".format(consistency, submission_id))
-        cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}')".format(submission_id))
-        cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}')".format(submission_id))
+        cursor.execute("INSERT INTO originalities(pending, submission_id) VALUES(TRUE, '{}') ON CONFLICT (submission_id) DO NOTHING;".format(submission_id))
+        cursor.execute("INSERT INTO concordances(pending, submission_id) VALUES(TRUE, '{}') ON CONFLICT (submission_id) DO NOTHING;".format(submission_id))
         self.postgres_db.commit()
         cursor.close()
 
