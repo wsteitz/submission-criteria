@@ -53,7 +53,7 @@ def get_submission(db_manager, filemanager, submission_id):
 
     df = pd.read_csv(local_file)
     assert "id" in df.columns, "No id column in submission {}".format(s3_filename)
-    assert "probability" in df.column, "No probability column in submission {}".format(s3_filename)
+    assert "probability" in df.columns, "No probability column in submission {}".format(s3_filename)
 
     df.sort_values("id", inplace=True)
     df = df["probability"]
