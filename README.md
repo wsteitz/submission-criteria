@@ -81,6 +81,7 @@ curl -vv -H "Content-Type: application/json" -X POST -d '{"submission_id": "7496
 
 Deployment
 ==========
+- Create Elastic Beanstalk environemnt: `./deploy/new-environment.sh api-ml-production api-ml-production`
 - Create a new environment: `./deploy/gen-dockerrun.sh prod && ./deploy/new-environment.sh api-ml-production api-ml-production`
 - Deploy changes: `./deploy/push.sh prod api-ml-production`
 
