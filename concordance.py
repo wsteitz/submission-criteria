@@ -82,7 +82,7 @@ def make_clusters(X, X_1, X_2, X_3):
         Cluster live data
     """
     logging.getLogger().info("New competition, clustering dataset")
-    kmeans = MiniBatchKMeans(n_clusters=5)
+    kmeans = MiniBatchKMeans(n_clusters=5, random_state=1337)
 
     kmeans.fit(X)
     c1, c2, c3 = kmeans.predict(X_1), kmeans.predict(X_2), kmeans.predict(X_3)

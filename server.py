@@ -13,6 +13,7 @@ import logging
 from pqueue import Queue
 from bottle import run, request, route
 from s3_util import FileManager
+import numpy as np
 
 # First Party
 from database_manager import DatabaseManager
@@ -137,6 +138,7 @@ def main():
 
     That method then enqueues the submission for concordance and originality checks.
     """
+    np.random.seed(1337)
 
     parser = argparse.ArgumentParser(description="Score if submissions are original.")
     parser.add_argument("--num_threads", dest="num_threads", type=int, default=32, help="Number of threads to use.")
