@@ -1,0 +1,14 @@
+[MESSAGES CONTROL]
+max-line-length=1000
+max-attributes=23
+max-locals=60
+max-branches=22
+max-statements=150
+min-similarity-lines=7
+disable=W0141,superfluous-parens,multiple-statements,C0111,C0103,E1101,pointless-string-statement,bare-except,undefined-loop-variable,global-variable-not-assigned,global-statement,import-error,locally-disabled,len-as-condition
+
+[TYPECHECK]
+ignored-modules = numpy, numpy.random, tensorflow
+
+[MISCELLANEOUS]
+notes=XXX

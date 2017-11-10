@@ -18,6 +18,8 @@ setup(
         "randomstate",
         "psycopg2",
         "sqlalchemy",
-        "mysqlclient"
+        "mysqlclient",
+        "pylint",
+        "flake8"
     ],
 )
