@@ -13,6 +13,7 @@ import pandas as pd
 # First Party
 import common
 
+
 def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
     """Checks that the clustered submission data conforms to a concordance threshold
 
@@ -55,6 +56,7 @@ def has_concordance(P1, P2, P3, c1, c2, c3, threshold=0.12):
     logging.getLogger().info("Noticed score {}".format(np.mean(ks)))
     return np.mean(ks) < threshold
 
+
 def make_clusters(X, X_1, X_2, X_3):
     """Split submission data into 3 clusters using K-Means clustering
 
@@ -89,6 +91,7 @@ def make_clusters(X, X_1, X_2, X_3):
     logging.getLogger().info("Finished clustering")
     return c1, c2, c3
 
+
 @functools.lru_cache(maxsize=2)
 def get_ids(filemanager, round_number):
     """Gets the ids from submission data based on the round_number
@@ -118,6 +121,7 @@ def get_ids(filemanager, round_number):
     live = tournament[tournament["data_type"] == "live"]
 
     return list(val["id"]), list(test["id"]), list(live["id"])
+
 
 def get_sorted_split(data, val_ids, test_ids, live_ids):
     """Split the competition data into validation, test, and live data sets in a sorted fashion
@@ -166,6 +170,7 @@ def get_sorted_split(data, val_ids, test_ids, live_ids):
 
     return validation.as_matrix(), test.as_matrix(), live.as_matrix()
 
+
 @functools.lru_cache(maxsize=2)
 def get_competition_variables(round_number, db_manager, filemanager):
     """Return the K-Means Clustered tournament data for the competition round
@@ -194,6 +199,7 @@ def get_competition_variables(round_number, db_manager, filemanager):
     val_ids, test_ids, live_ids = get_ids(filemanager, round_number)
     return get_competition_variables_from_df(round_number, training, tournament, val_ids, test_ids, live_ids)
 
+
 def get_competition_variables_from_df(
         round_number: str, training: pd.DataFrame, tournament: pd.DataFrame,
         val_ids: list, test_ids: list, live_ids: list) -> dict:
@@ -215,7 +221,8 @@ def get_competition_variables_from_df(
     }
     return variables
 
-def get_submission_pieces(submission_id, round_number,  db_manager, filemanager):
+
+def get_submission_pieces(submission_id, round_number, db_manager, filemanager):
     """Get validation, test, and live ids sorted from submission_id
 
     Parameters:
@@ -250,6 +257,7 @@ def get_submission_pieces(submission_id, round_number,  db_manager, filemanager)
     validation, tests, live = get_sorted_split(data, val_ids, test_ids, live_ids)
     return validation, tests, live
 
+
 def submission_concordance(submission, db_manager, filemanager):
     """Determine if a submission is concordant and write the result to DB
 
@@ -270,12 +278,12 @@ def submission_concordance(submission, db_manager, filemanager):
     c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
 
     try:
-        concordance = has_concordance(P1, P2,P3, c1, c2, c3)
+        concordance = has_concordance(P1, P2, P3, c1, c2, c3)
     except IndexError:
         # If we had an indexing error, that is because the round restart, and we need to try getting the new competition variables.
         get_competition_variables.cache_clear()
         clusters = get_competition_variables(round_number, db_manager, filemanager)
         c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
-        concordance = has_concordance(P1, P2,P3, c1, c2, c3)
+        concordance = has_concordance(P1, P2, P3, c1, c2, c3)
 
     db_manager.write_concordance(submission['submission_id'], concordance)

@@ -1,7 +1,6 @@
 import time
 import numpy as np
 
-import numpy as np
 import randomstate as rnd
 
 from benchmark_base import Benchmark
@@ -59,8 +58,13 @@ class OriginalityBenchmark(Benchmark):
             times_per_submission.extend(t_subs)
             self.checkpoint(times_per_iteration, times_per_submission)
 
-if __name__ == '__main__':
+
+def main():
     benchmark = OriginalityBenchmark(n_runs=N_RUNS)
     benchmark.start('%s runs of %s examples against %s other submissions' % (
         N_RUNS, N_EXAMPLES, N_OTHER_SUBMISSIONS
     ))
+
+
+if __name__ == '__main__':
+    main()

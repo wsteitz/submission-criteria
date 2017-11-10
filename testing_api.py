@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Numerai API Testing."""
+
 # System
 import zipfile
 from datetime import datetime, timedelta
@@ -7,7 +8,8 @@ from datetime import datetime, timedelta
 # Third Party
 import requests
 import numpy as np
-#https://stage-api-hs-numerai.herokuapp.com
+
+
 class NumerAPI(object):
     def __init__(self):
         api_url = "https://stage-api-numer-ai.herokuapp.com"
@@ -32,7 +34,6 @@ class NumerAPI(object):
         self._credentials = {"email": value[0], "password": value[1]}
 
     def download_current_dataset(self, dest_path='.', unzip=True):
-        now = datetime.now().strftime('%Y%m%d')
         file_name = 'numerai_dataset.zip'
         dest_file_path = '{0}/{1}'.format(dest_path, file_name)
 
@@ -48,7 +49,6 @@ class NumerAPI(object):
             with zipfile.ZipFile(dest_file_path, "r") as z:
                 z.extractall(dest_path)
         return r.status_code
-
 
     def get_new_leaderboard(self, n=None):
         if n is None:
@@ -71,7 +71,6 @@ class NumerAPI(object):
             return (None, r.status_code)
         return (r.json(), r.status_code)
 
-
     def get_earnings_per_round(self, username):
         r = requests.get('{0}/{1}'.format(self._users_url, username))
         if r.status_code != 200:
@@ -83,7 +82,6 @@ class NumerAPI(object):
         for i in range(len(rewards)):
             earnings[i] = rewards[i]['amount']
         return (earnings, r.status_code)
-
 
     def get_scores(self, username):
         r = requests.get('{0}/{1}'.format(self._users_url, username))
@@ -97,7 +95,6 @@ class NumerAPI(object):
             scores[i] = results[i]['accuracy_score']
         return (scores, r.status_code)
 
-
     def get_user(self, username):
         leaderboard, status_code = self.get_leaderboard()
         if status_code != 200:
@@ -108,7 +105,6 @@ class NumerAPI(object):
                 return (user['username'], np.float(user['logloss']['public']), user['rank']['public'], user['earned'], status_code)
         return (None, None, None, None, status_code)
 
-
     def login(self):
         r = requests.post(self._login_url, data=self.credentials)
         if r.status_code != 201:
@@ -117,23 +113,21 @@ class NumerAPI(object):
         rj = r.json()
         return(rj['accessToken'], rj['refreshToken'], rj['id'], r.status_code)
 
-
     def authorize(self, file_path):
         accessToken, _, _, status_code = self.login()
         if status_code != 201:
             return (None, None, None, status_code)
 
-        headers = {'Authorization':'Bearer {0}'.format(accessToken)}
+        headers = {'Authorization': 'Bearer {0}'.format(accessToken)}
 
         r = requests.post(self._auth_url,
-                          data={'filename':file_path.split('/')[-1], 'mimetype': 'text/csv'},
+                          data={'filename': file_path.split('/')[-1], 'mimetype': 'text/csv'},
                           headers=headers)
         if r.status_code != 200:
             return (None, None, None, r.status_code)
 
         rj = r.json()
         return (rj['filename'], rj['signedRequest'], headers, r.status_code)
-
 
     def get_current_competition(self):
         now = datetime.now()
@@ -146,7 +140,6 @@ class NumerAPI(object):
             end_date = datetime.strptime(c['end_date'], '%Y-%m-%dT%H:%M:%S.%fZ')
             if start_date < now < end_date:
                 return (c['dataset_id'], c['_id'], status_code)
-
 
     def upload_prediction(self, file_path):
         filename, signedRequest, headers, status_code = self.authorize(file_path)

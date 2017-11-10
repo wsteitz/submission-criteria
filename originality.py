@@ -14,6 +14,7 @@ import common
 
 lock = Lock()
 
+
 @functools.lru_cache(maxsize=2048)
 def get_submission(db_manager, filemanager, submission_id):
     """Gets the submission file from S3
@@ -68,6 +69,7 @@ def get_submission(db_manager, filemanager, submission_id):
 
     return a
 
+
 def original(submission1, submission2, threshold=0.05):
     """Determines if two submissions are original
 
@@ -85,6 +87,7 @@ def original(submission1, submission2, threshold=0.05):
     """
     score = originality_score(submission1, submission2)
     return score > threshold
+
 
 # this function is taken from scipy (ks_2samp) and modified and so falls
 # under their BSD license
@@ -119,16 +122,17 @@ def originality_score(data1, data2):
     # the following commented out line is slower than the two after it
     # cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
     cdf1 = np.searchsorted(data1, data2, side='right')
-    cdf1 = np.concatenate((np.arange(n1) + 1, cdf1)) / (1.0*n1)
+    cdf1 = np.concatenate((np.arange(n1) + 1, cdf1)) / (1.0 * n1)
 
     # the following commented out line is slower than the two after it
     # cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
     cdf2 = np.searchsorted(data2, data1, side='right')
-    cdf2 = np.concatenate((cdf2, np.arange(n1) + 1)) / (1.0*n2)
+    cdf2 = np.concatenate((cdf2, np.arange(n1) + 1)) / (1.0 * n2)
 
     d = np.max(np.absolute(cdf1 - cdf2))
 
     return d
+
 
 def is_almost_unique(submission_data, submission, db_manager, filemanager, is_exact_dupe_thresh, is_similar_thresh, max_similar_models):
     """Determines how similar/exact a submission is to all other submission for the competition round

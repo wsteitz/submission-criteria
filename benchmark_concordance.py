@@ -56,12 +56,12 @@ class BenchmarkConcordance(Benchmark):
             sample = df.sample(sample_batch_size, replace=True)
             sample = sample[features] + rnd.normal(loc=0.0, scale=0.1, size=sample[features].shape)
             sample = sample.as_matrix()
-            new_ids = np.array([batch_nr*sample_batch_size + j for j in range(sample_batch_size)])
+            new_ids = np.array([batch_nr * sample_batch_size + j for j in range(sample_batch_size)])
 
             data_types = [random.choice(data_types) for _ in range(sample_batch_size)]
             new_batch = {
                 'id': new_ids,
-                'era': ['era%s' % random.choice([i+1 for i in range(99)]) for _ in range(sample_batch_size)],
+                'era': ['era%s' % random.choice([i + 1 for i in range(99)]) for _ in range(sample_batch_size)],
                 'data_type': data_types,
                 'target': [random.choice([0, 1]) if data_types[i] != 'live' else np.nan for i in range(sample_batch_size)]
             }
@@ -84,7 +84,7 @@ class BenchmarkConcordance(Benchmark):
         # try to use half the available cores to avoid shaky medians per run caused by cpu usage from other processes
         pool_size = os.cpu_count() or 1
         if pool_size > 1:
-            pool_size = pool_size//2
+            pool_size = pool_size // 2
 
         source_train_data, source_predict_data, source_submission = self.load_data()
         train_data, predict_data, submission_data = \
@@ -100,12 +100,16 @@ class BenchmarkConcordance(Benchmark):
         with Pool(pool_size) as pool:
             times = pool.starmap(self.check_concordance, [(submission_data, clusters, ids) for _ in range(N_RUNS)])
 
-        self.log('benchmark finished in %.2fs' % (sum(times)/1000))
+        self.log('benchmark finished in %.2fs' % (sum(times) / 1000))
         self.log('[per iteration] %s' % self.format_stats(times, unit='ms'))
 
 
-if __name__ == '__main__':
+def main():
     benchmark = BenchmarkConcordance(n_runs=N_RUNS)
     benchmark.start('benchmarking %s submissions with %s examples each' % (
         N_RUNS, N_SAMPLES
     ))
+
+
+if __name__ == '__main__':
+    main()

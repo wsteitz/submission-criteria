@@ -38,6 +38,7 @@ originality_queue = Queue(OQ_DIR, tempdir=TEMP_DIR)
 concordance_queue = Queue(CQ_DIR, tempdir=TEMP_DIR)
 leaderboard_queue = Queue(LBQ_DIR, tempdir=LB_TEMP_DIR)
 
+
 @route('/', method='POST')
 def queue_for_scoring():
     """ Recieves a submission and authenticates that the request has a valid API key.
@@ -48,7 +49,6 @@ def queue_for_scoring():
     json = request.json
     submission_id = json["submission_id"]
     api_key = json["api_key"]
-
 
     if API_KEY is None:
         logging.getLogger().critical("NO API KEY EXITING")

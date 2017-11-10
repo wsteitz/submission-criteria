@@ -1,10 +1,12 @@
 """Machine Learning Server Unit Testing."""
 
-from unittest.mock import MagicMock
-import unittest
-from pqueue import Queue
+# System
 import tempfile
 import warnings
+
+# Third Party
+import unittest
+from pqueue import Queue
 
 
 class TestServerFailover(unittest.TestCase):
