@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+
+# System
 import time
 import numpy as np
 
+# Third Party
 import randomstate as rnd
 
+# First Party
 from benchmark_base import Benchmark
 from originality import original
 
