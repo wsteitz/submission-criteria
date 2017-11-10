@@ -115,3 +115,4 @@ dump/
 Dockerrun.aws.json
 
 numerai_datasets
+test_csv/*
