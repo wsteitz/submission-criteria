@@ -43,13 +43,13 @@ jobs:
       - image: circleci/python:3.5.3
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           name: Install AWS & EB CLI
           command: |
             pip install awscli --upgrade --user
             pip install awsebcli --upgrade --user
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build and Deploy
           command: |
