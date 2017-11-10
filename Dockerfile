@@ -6,6 +6,7 @@ RUN apt-get -qq update
 RUN apt-get -qq install mysql-server
 RUN apt-get -qq install libmysqlclient-dev
 RUN apt-get -qq install gcc
+RUN apt-get -qq install -y --no-install-recommends apt-utils
 
 WORKDIR /app
 COPY ./setup.py ./
