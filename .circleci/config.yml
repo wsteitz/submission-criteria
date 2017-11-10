@@ -32,11 +32,6 @@ jobs:
             . venv/bin/activate
             flake8 --config=./.flake8 ./
             find . -iname "*.py" ! -name "setup.py" ! -name "__init__.py" ! -path "./venv/*" | xargs pylint --rcfile=./.pylintrc
-  test:
-    docker:
-        - image: circleci/python:3.5.3
-    steps:
-      - checkout
       - run:
           name: Run Benchmarks
           command: |
@@ -59,7 +54,6 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - test
       - deploy:
           requires:
             - build
