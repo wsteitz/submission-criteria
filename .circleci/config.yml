@@ -43,13 +43,16 @@ jobs:
       - image: circleci/python:3.5.3
     steps:
       - checkout
+      - run:
+          name: Install AWS CLI
+          command: |
+            sudo pip install awscli --upgrade
+            sudo pip install awsebcli --upgrade
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
           name: Build and Deploy
           command: |
-            sudo pip install awscli --upgrade
-            sudo pip install awsebcli --upgrade
             ./deploy/push.sh prod api-ml-production
 
 workflows:
