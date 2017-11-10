@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Test Server."""
 
 # System
@@ -8,7 +10,7 @@ import os
 import requests
 
 # First Party
-from database_manager import DatabaseManager
+from submission_criteria.database_manager import DatabaseManager
 
 
 def fetch_competition(db):

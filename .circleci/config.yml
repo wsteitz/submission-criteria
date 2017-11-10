@@ -37,6 +37,7 @@ jobs:
           command: |
             . venv/bin/activate
             ./tests/benchmark_originality.py
+            ./tests/test_server_unittests.py
   deploy:
     docker:
       - image: circleci/python:3.5.3
