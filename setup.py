@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="numerai",
+    name="submission_criteria",
     author="Numerai",
     install_requires=[
         "boto3",

@@ -9,7 +9,7 @@ import randomstate as rnd
 
 # First Party
 from benchmark_base import Benchmark
-from originality import original
+from submission_criteria.originality import original
 
 N_RUNS = 5
 N_EXAMPLES = 45000

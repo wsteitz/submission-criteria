@@ -36,7 +36,7 @@ jobs:
           name: Run Benchmarks
           command: |
             . venv/bin/activate
-            ./benchmark_originality.py
+            ./tests/benchmark_originality.py
   deploy:
     docker:
       - image: circleci/python:3.5.3

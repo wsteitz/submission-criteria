@@ -8,7 +8,8 @@ RUN apt-get -qq install libmysqlclient-dev
 RUN apt-get -qq install gcc
 
 WORKDIR /app
-COPY ./* ./
+COPY ./setup.py ./
+COPY ./submission_criteria ./submission_criteria
 
 RUN pip install -e .
 
@@ -19,4 +20,4 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 EXPOSE 4000
 
-CMD ["./server.py"]
+CMD ["./submission_criteria/server.py"]
