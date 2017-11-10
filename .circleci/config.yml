@@ -49,7 +49,7 @@ jobs:
           name: Build and Deploy
           command: |
             sudo pip install awscli --upgrade
-            pip install awsebcli --upgrade --user
+            pip install awsebcli --upgrade
             ./deploy/push.sh prod api-ml-production
 
 workflows:
