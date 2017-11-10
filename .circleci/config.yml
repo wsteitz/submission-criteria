@@ -48,7 +48,7 @@ jobs:
       - run:
           name: Build and Deploy
           command: |
-            pip install awscli --upgrade --user
+            sudo apt-get -y -qq install awscli
             aws
             pip install awsebcli --upgrade --user
             ./deploy/push.sh prod api-ml-production
