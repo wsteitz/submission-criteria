@@ -18,11 +18,11 @@ S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY")
 
 class FileManager(object):
 
-    def __init__(self, local_dir, logging=None):
+    def __init__(self, local_dir, log=None):
         self.local_dir = local_dir
         self.s3 = boto3.resource("s3", aws_access_key_id=S3_ACCESS_KEY, aws_secret_access_key=S3_SECRET_KEY)
         self.bucket = S3_BUCKET
-        self.logging = logging
+        self.log = log
 
     def __hash__(self):
         """
@@ -57,7 +57,7 @@ class FileManager(object):
                     self.s3.meta.client.download_file(self.bucket, s3_file, full_filename)
                 except botocore.exceptions.EndpointConnectionError:
 
-                    if self.logging:
+                    if self.log:
                         logging.getLogger().info("Could not download {} from S3. Skipping.".format(s3_file))
                     else:
                         print("Could not download {} from S3. Skipping.".format(s3_file))

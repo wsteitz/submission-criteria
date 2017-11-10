@@ -172,7 +172,7 @@ def get_sorted_split(data, val_ids, test_ids, live_ids):
 
 
 @functools.lru_cache(maxsize=2)
-def get_competition_variables(round_number, db_manager, filemanager):
+def get_competition_variables(round_number, filemanager):
     """Return the K-Means Clustered tournament data for the competition round
 
     Parameters:
@@ -273,7 +273,7 @@ def submission_concordance(submission, db_manager, filemanager):
             S3 Bucket data access object for querying competition datasets
     """
     round_number = db_manager.get_round_number(submission["submission_id"])
-    clusters = get_competition_variables(round_number, db_manager, filemanager)
+    clusters = get_competition_variables(round_number, filemanager)
     P1, P2, P3 = get_submission_pieces(submission["submission_id"], round_number, db_manager, filemanager)
     c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
 
@@ -282,7 +282,7 @@ def submission_concordance(submission, db_manager, filemanager):
     except IndexError:
         # If we had an indexing error, that is because the round restart, and we need to try getting the new competition variables.
         get_competition_variables.cache_clear()
-        clusters = get_competition_variables(round_number, db_manager, filemanager)
+        clusters = get_competition_variables(round_number, filemanager)
         c1, c2, c3 = clusters["cluster_1"], clusters["cluster_2"], clusters["cluster_3"]
         concordance = has_concordance(P1, P2, P3, c1, c2, c3)
 

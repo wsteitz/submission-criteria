@@ -44,11 +44,11 @@ def get_submission(db_manager, filemanager, submission_id):
 
         local_files = filemanager.download([s3_filename])
         if len(local_files) != 1:
-            logging.getLogger().info("Error looking for submission {}, found files".format(submission_id, local_files))
+            logging.getLogger().info("Error looking for submission {}, found files {}".format(submission_id, local_files))
             return None
 
         local_file = local_files[0]
-    except Exception as e:
+    except Exception:
         logging.getLogger().info("Could not get submission {} at S3 path {}".format(submission_id, s3_filename))
         return None
 

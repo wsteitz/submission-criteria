@@ -22,6 +22,7 @@ class NumerAPI(object):
         self.leaderboard_url = api_url + '/competitions'
         self.new_leaderboard_url = new_api_url + '/leaderboard'
         self.new_current_leaderboard_url = new_api_url + '/currentLeaderboard'
+        self._credentials = None
 
     @property
     def credentials(self):
@@ -79,7 +80,7 @@ class NumerAPI(object):
         rj = r.json()
         rewards = rj['rewards']
         earnings = np.zeros(len(rewards))
-        for i in range(len(rewards)):
+        for i, _ in enumerate(rewards):
             earnings[i] = rewards[i]['amount']
         return (earnings, r.status_code)
 
@@ -91,7 +92,7 @@ class NumerAPI(object):
         rj = r.json()
         results = rj['submissions']['results']
         scores = np.zeros(len(results))
-        for i in range(len(results)):
+        for i, _ in enumerate(results):
             scores[i] = results[i]['accuracy_score']
         return (scores, r.status_code)
 
@@ -146,7 +147,7 @@ class NumerAPI(object):
         if status_code != 200:
             return status_code
 
-        dataset_id, comp_id, status_code = self.get_current_competition()
+        dataset_id, _, status_code = self.get_current_competition()
         if status_code != 200:
             return status_code
 

@@ -1,15 +1,17 @@
+# System
 import tempfile
 import bz2
 import os
 import time
+import random
+from multiprocessing import Pool
 
+# Third Party
 import pandas as pd
 import numpy as np
 import randomstate as rnd
-import random
 
-from multiprocessing import Pool
-
+# First Party
 from benchmark_base import Benchmark
 from concordance import get_competition_variables_from_df
 from concordance import has_concordance
@@ -20,12 +22,13 @@ N_RUNS = 250
 
 
 class BenchmarkConcordance(Benchmark):
-    def load_data(self):
+    @staticmethod
+    def load_data():
         data_frames = dict()
         for sample_type, sample_file in [
-            ('train', 'data/sample_training.csv.bz2'),
-            ('predict', 'data/sample_tournament.csv.bz2'),
-            ('result', 'data/sample_result.csv.bz2')
+                ('train', 'data/sample_training.csv.bz2'),
+                ('predict', 'data/sample_tournament.csv.bz2'),
+                ('result', 'data/sample_result.csv.bz2')
         ]:
             with tempfile.NamedTemporaryFile() as temp_file, \
                     open(temp_file.name, 'wb') as uncompressed_file, \
@@ -47,7 +50,8 @@ class BenchmarkConcordance(Benchmark):
         })
         return new_train, new_predict, new_result
 
-    def gen_similar_df(self, df: pd.DataFrame, data_types: list) -> pd.DataFrame:
+    @staticmethod
+    def gen_similar_df(df: pd.DataFrame, data_types: list) -> pd.DataFrame:
         sample_batch_size = 500
         new_df = pd.DataFrame(data=None, columns=df.columns)
         features = [col for col in df.columns if 'feature' in col]
@@ -71,7 +75,8 @@ class BenchmarkConcordance(Benchmark):
             new_df = pd.concat((new_df, pd.DataFrame.from_dict(new_batch)), axis=0)
         return new_df
 
-    def check_concordance(self, submission, clusters, ids):
+    @staticmethod
+    def check_concordance(submission, clusters, ids):
         t0 = time.time()
         ids_valid, ids_test, ids_live = ids['valid'], ids['test'], ids['live']
         p1, p2, p3 = get_sorted_split(submission, ids_valid, ids_test, ids_live)

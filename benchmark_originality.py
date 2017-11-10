@@ -31,7 +31,7 @@ class OriginalityBenchmark(Benchmark):
 
         return (time.time() - t_iter_start), t_per_submission
 
-    def checkpoint(self, times_per_iteration: list, times_per_submission: list=None):
+    def checkpoint(self, times_per_iteration: list, times_per_submission: list = None):
         if not self.print_checkpoint:
             return
 

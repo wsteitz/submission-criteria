@@ -79,11 +79,10 @@ for clf in clfs:
 
     input("Both concordance and originality should pass. Press enter to continue...")
 
-for i in range(len(clfs)):
-    for j in range(len(clfs)):
+for i, clf1 in enumerate(clfs):
+    for j, clf2 in enumerate(clfs):
         if i == j:
             continue
-        clf1, clf2 = clfs[i], clfs[j]
 
         y_pv = clf1.predict_proba(x_pv)[:, 1]
         valid_df = pd.DataFrame(ids_v).join(pd.DataFrame(data={'prediction': y_pv}))
