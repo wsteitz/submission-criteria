@@ -142,8 +142,17 @@ class DatabaseManager(object):
         if end_time is None:
             end_time = datetime.datetime.utcnow()
         cursor = self.postgres_db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        query = "SELECT id FROM submissions WHERE round_id = '{}' AND user_id != '{}' AND inserted_at < '{}' AND selected = TRUE ORDER BY inserted_at DESC".format(round_id, user_id, end_time)
-        cursor.execute(query)
+        query = """
+        SELECT s.id FROM submissions s
+        INNER JOIN originalities o
+          ON s.id = o.submission_id
+        WHERE s.round_id = %s AND
+          s.user_id != %s AND
+          s.inserted_at < %s AND
+          s.selected = TRUE AND
+          (o.value = TRUE OR o.pending = TRUE)
+        ORDER BY s.inserted_at DESC"""
+        cursor.execute(query, [round_id, user_id, end_time])
         results = cursor.fetchall()
         cursor.close()
         return results
