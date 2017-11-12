@@ -190,7 +190,7 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
             if np.abs(correlation) > 0.95:
                 msg = "Found a highly correlated submission {} with score {}"
-                msg = msg.format(user_sub["submission_id"])
+                msg = msg.format(user_sub["id"])
                 logging.getLogger().info(msg, correlation)
                 is_original = False
                 break
@@ -208,12 +208,12 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
             score = originality_score(submission[:, 1], other_submission[:, 1])
             if score < is_exact_dupe_thresh:
-                logging.getLogger().info("Found a duplicate submission {} with score {}".format(user_sub["submission_id"], score))
+                logging.getLogger().info("Found a duplicate submission {} with score {}".format(user_sub["id"], score))
                 is_original = False
                 break
             if score <= is_similar_thresh:
                 num_similar_models += 1
-                similar_models.append(user_sub["submission_id"])
+                similar_models.append(user_sub["id"])
                 if num_similar_models >= max_similar_models:
                     logging.getLogger().info("Found too many similar models. Similar models were {}".format(similar_models))
                     is_original = False
