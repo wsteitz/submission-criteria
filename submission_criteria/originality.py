@@ -177,12 +177,12 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
     get_others = db_manager.get_everyone_elses_recent_submssions
 
     # first test correlations
-    for user_sub in get_others(submission_data['competition_id'],
-                               submission_data['user'], date_created):
+    for user_sub in get_others(submission_data["round_id"],
+                               submission_data["user_id"], date_created):
 
         with lock:
             other_submission = get_submission(db_manager, filemanager,
-                                              user_sub["submission_id"])
+                                              user_sub["id"])
         if other_submission is None:
             continue
 
@@ -197,12 +197,12 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
 
     # only run KS test if correlation test passes
     if is_original:
-        for user_sub in get_others(submission_data['competition_id'],
-                                   submission_data['user'], date_created):
+        for user_sub in get_others(submission_data["round_id"],
+                                   submission_data["user_id"], date_created):
 
             with lock:
                 other_submission = get_submission(db_manager, filemanager,
-                                                  user_sub["submission_id"])
+                                                  user_sub["id"])
             if other_submission is None:
                 continue
 
