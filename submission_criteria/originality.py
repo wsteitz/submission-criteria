@@ -189,9 +189,8 @@ def is_almost_unique(submission_data, submission, db_manager, filemanager, is_ex
         if is_not_a_constant and np.std(other_submission[:, 0]) > 0:
             correlation = pearsonr(submission[:, 0], other_submission[:, 0])[0]
             if np.abs(correlation) > 0.95:
-                msg = "Found a highly correlated submission {} with score {}"
-                msg = msg.format(user_sub["id"])
-                logging.getLogger().info(msg, correlation)
+                msg = "Found a highly correlated submission {} with score {}".format(user_sub["id"], correlation)
+                logging.getLogger().info(msg)
                 is_original = False
                 break
 
