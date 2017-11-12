@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/numerai/submission-criteria.svg?style=svg)](https://circleci.com/gh/numerai/submission-criteria)
+[![CircleCI](https://circleci.com/gh/numerai/submission-criteria.svg?style=svg&circle-token=eafb6c8ab5f97e310cb69134991017044321ba42)](https://circleci.com/gh/numerai/submission-criteria)
 
 Overview
 ========
