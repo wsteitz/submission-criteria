@@ -9,8 +9,8 @@ else
   SECRETS_BUCKET="numerai-api-ml-staging-secrets"
 fi
 
-sudo docker build -t 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 --build-arg secrets_bucket=$SECRETS_BUCKET . &&
+docker build -t 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 --build-arg secrets_bucket=$SECRETS_BUCKET . &&
 aws --region us-west-2 ecr get-login --no-include-email | sudo bash &&
-sudo docker push 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 &&
+docker push 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 &&
 ./deploy/gen-dockerrun.sh $2 &&
 eb deploy --staged $2
