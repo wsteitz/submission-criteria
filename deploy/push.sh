@@ -12,5 +12,4 @@ fi
 docker build -t 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 --build-arg secrets_bucket=$SECRETS_BUCKET . &&
 aws --region us-west-2 ecr get-login --no-include-email | sudo bash &&
 docker push 074996771758.dkr.ecr.us-west-2.amazonaws.com/api-ml:$2 &&
-./deploy/gen-dockerrun.sh $2 &&
-eb deploy --staged $2
+./deploy/gen-dockerrun.sh $2
